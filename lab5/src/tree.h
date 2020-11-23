@@ -6,6 +6,7 @@
 
 enum NodeType
 {
+	NODE_BOOL,
     NODE_CONST, 
     NODE_VAR,
     NODE_EXPR,
@@ -13,18 +14,24 @@ enum NodeType
 
     NODE_STMT,
     NODE_PROG,
+    
+	NODE_OP,
 };
 
 enum OperatorType
 {
     OP_EQ,  // ==
+	OP_ADD,
+	OP_SUB,
+	OP_MUL,
+	OP_DIV,
+	OP_NOT,
 };
 
 enum StmtType {
     STMT_SKIP,
     STMT_DECL,
-}
-;
+};
 
 struct TreeNode {
 public:
@@ -37,7 +44,7 @@ public:
 
     void addChild(TreeNode*);
     void addSibling(TreeNode*);
-    
+
     void printNodeInfo();
     void printChildrenId();
 

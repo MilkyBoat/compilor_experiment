@@ -56,3 +56,4 @@ dkms.conf
 资料/
 *.zip
 temp
+~$*
