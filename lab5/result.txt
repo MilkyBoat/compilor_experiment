@@ -1,0 +1,46 @@
+lno@0	@0	program	children: [@1 @3 @6 @8 @14 @18 @22 @26 @44 	]
+lno@1	@1	statement	children: [@2 	] stmt: printf
+lno@1	@2	const type: string
+lno@2	@3	statement	children: [@4 @5 	] stmt: decl
+lno@2	@4	type type: int
+lno@2	@5	variable varname: n
+lno@3	@6	statement	children: [@7 	] stmt: scanf
+lno@3	@7	variable varname: n
+lno@4	@8	statement	children: [@9 @12 	] stmt: if
+lno@4	@9	expression	children: [@10 @11 	]
+lno@4	@10	variable varname: n
+lno@4	@11	const type: int
+lno@5	@12	statement	children: [@13 	] stmt: printf
+lno@5	@13	const type: string
+lno@7	@14	statement	children: [@15 @16 @17 	] stmt: decl
+lno@7	@15	type type: int
+lno@7	@16	variable varname: a
+lno@7	@17	const type: int
+lno@8	@18	statement	children: [@19 @20 @21 	] stmt: decl
+lno@8	@19	type type: int
+lno@8	@20	variable varname: b
+lno@8	@21	const type: int
+lno@9	@22	statement	children: [@23 @24 @25 	] stmt: decl
+lno@9	@23	type type: int
+lno@9	@24	variable varname: c
+lno@9	@25	const type: int
+lno@10	@26	statement	children: [@27 @30 @33 @36 @40 	] stmt: while
+lno@10	@27	expression	children: [@28 @29 	]
+lno@10	@28	variable varname: n
+lno@10	@29	const type: int
+lno@11	@30	statement	children: [@31 @32 	] stmt: assign
+lno@11	@31	variable varname: a
+lno@11	@32	variable varname: b
+lno@12	@33	statement	children: [@34 @35 	] stmt: assign
+lno@12	@34	variable varname: b
+lno@12	@35	variable varname: c
+lno@13	@36	statement	children: [@37 @38 @39 	] stmt: assign
+lno@13	@37	variable varname: c
+lno@13	@38	variable varname: a
+lno@13	@39	variable varname: b
+lno@14	@40	statement	children: [@41 @42 @43 	] stmt: assign
+lno@14	@41	variable varname: n
+lno@14	@42	variable varname: n
+lno@14	@43	const type: int
+lno@16	@44	statement	children: [@45 	] stmt: printf
+lno@16	@45	const type: string

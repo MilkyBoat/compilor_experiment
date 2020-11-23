@@ -54,3 +54,5 @@ dkms.conf
 # 
 *.mp4
 资料/
+*.zip
+temp
