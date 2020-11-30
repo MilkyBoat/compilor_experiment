@@ -51,6 +51,10 @@ Module.symvers
 Mkfile.old
 dkms.conf
 
+# vscode
+launch.json
+tasks.json
+
 # 
 *.mp4
 资料/
