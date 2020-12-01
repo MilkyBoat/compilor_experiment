@@ -6,78 +6,47 @@
 int lineno=1;
 %}
 
-BLOCKCOMMENT \/\*([^\*^\/]*|[\*^\/*]*|[^\**\/]*)*\*\/
+BLOCKCOMMENT_BEGIN "/*"
+BLOCKCOMMENT_ELE .
+BLOCKCOMMENT_LINE \n
+BLOCKCOMMENT_END "*/"
+%x BLOCKCOMMENT
 LINECOMMENT \/\/[^\n]*
 EOL	(\r\n|\r|\n)
 WHILTESPACE [[:blank:]]
-
-CONT "*"
-ADDR "&"
-
-LPAREN "("
-RPAREN ")"
-LBRACE "{"
-RBRACE "}"
-SEMICOLON ";"
-
-EQ "=="
-GRAEQ ">="
-LESEQ "<="
-NEQ "!="
-ASSIGN "="
-PLUSASSIGN "+="
-MINUSASSIGN "-="
-MULASSIGN "*="
-DIVASSIGN "/="
-GRA ">"
-LES "<"
-PLUS "+"
-MINUS "-"
-MUL "*"
-DIV "/"
-MOD "%"
-AND "&&"
-OR "||"
-NOT "!"
-
-CONST "const"
-VOID "void"
-IF "if"
-ELSE "else"
-WHILE "while"
-FOR "for"
-BREAK "break"
-CONTINUE "continue"
-RETURN "return"
-INT "int"
-
-PRINT "printf"
-SCAN "scanf"
 
 OCTINT 0[0-7]+
 DECINT -?[0-9]+
 HEXINT 0[Xx][0-9a-fA-F]+
 
+BOOL (true)|(false)
 CHAR \'.?\'
 STRING \"[^(\\")]*\"
 
 IDENTIFIER [[:alpha:]_][[:alpha:][:digit:]_]*
+
 %%
 
-{BLOCKCOMMENT}  /* do nothing */
+{BLOCKCOMMENT_BEGIN} {BEGIN BLOCKCOMMENT;}
+<BLOCKCOMMENT>{BLOCKCOMMENT_ELE} {}
+<BLOCKCOMMENT>{BLOCKCOMMENT_LINE} {lineno++;}
+<BLOCKCOMMENT>{BLOCKCOMMENT_END} {BEGIN INITIAL;}
 {LINECOMMENT}  /* do nothing */
 
 "int" return T_INT;
 "bool" return T_BOOL;
 "char" return T_CHAR;
+"void" return T_VOID;
 
-"*" return CONT;
 "&" return ADDR;
 
 "(" return LPAREN;
 ")" return RPAREN;
+"[" return LBRACKET;
+"]" return RBRACKET;
 "{" return LBRACE;
 "}" return RBRACE;
+"," return COMMA;
 ";" return SEMICOLON;
 
 "==" return EQ;
@@ -101,7 +70,6 @@ IDENTIFIER [[:alpha:]_][[:alpha:][:digit:]_]*
 "!" return NOT;
 
 "const" return CONST;
-"void" return VOID;
 "if" return IF;
 "else" return ELSE;
 "while" return WHILE;
@@ -110,8 +78,28 @@ IDENTIFIER [[:alpha:]_][[:alpha:][:digit:]_]*
 "continue" return CONTINUE;
 "return" return RETURN;
 
-"printf" return PRINT;
-"scanf" return SCAN;
+"printf" {
+    TreeNode* node = new TreeNode(lineno, NODE_VAR);
+    node->var_name = "printf";
+    node->var_scope = "0";
+    yylval = node;
+    return IDENTIFIER;
+};
+"scanf" {
+    TreeNode* node = new TreeNode(lineno, NODE_VAR);
+    node->var_name = "scanf";
+    node->var_scope = "0";
+    yylval = node;
+    return IDENTIFIER;
+};
+
+{BOOL} {
+    TreeNode* node = new TreeNode(lineno, NODE_CONST);
+    node->type = TYPE_BOOL;
+    node->b_val = strcmp("false", yytext);
+    yylval = node;
+    return BOOL;
+}
 
 {OCTINT} {
     TreeNode* node = new TreeNode(lineno, NODE_CONST);
@@ -161,9 +149,9 @@ IDENTIFIER [[:alpha:]_][[:alpha:][:digit:]_]*
     return IDENTIFIER;
 }
 
-{WHILTESPACE} /* do nothing */
+{WHILTESPACE} {}
 
-{EOL} lineno++;
+{EOL} {lineno++;}
 
 . {
     cerr << "[line "<< lineno <<" ] unknown character:" << yytext << endl;

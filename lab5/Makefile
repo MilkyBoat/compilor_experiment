@@ -1,5 +1,5 @@
 CC := g++
-CFLAGS := -Wall -Wextra -std=c++11 # without debug
+CFLAGS := -Wall -Wextra -std=c++11  # without debug
 TARGET := ./bin/main
 
 all: run
@@ -28,4 +28,6 @@ clean:
 	rm -f src/*.output src/main.l.yy.cpp src/main.tab.cpp src/main.tab.h src/main.output src/pch.h.gch $(TARGET) *.o ./bin/* 
 
 test: 
-	./bin/main tests/test.c > result.txt
+	# ./bin/main tests/1.c > result.txt
+	./bin/main tests/1.c
+	

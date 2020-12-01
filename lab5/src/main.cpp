@@ -21,7 +21,8 @@ int main(int argc, char *argv[])
         }
     }
     yyparse();
-    if(root != NULL) {
+    if (root != NULL)
+    {
         root->genNodeId();
         root->printAST();
     }

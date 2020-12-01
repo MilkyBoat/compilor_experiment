@@ -1,0 +1,3 @@
+error: Undeclared identifier :"scanf", scope : name: , at line 9
+error: syntax error, at line 9
+@0	line 0	<program>,	child:-	
