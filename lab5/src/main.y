@@ -7,18 +7,18 @@
 
 	// max_scope_id 是堆栈下一层结点的最大编号
 	unsigned char max_scope_id = SCOPT_ID_BASE;
-	string presentScope = "" + SCOPT_ID_BASE;
+	string presentScope = "1";
 	unsigned int top = 0;
 
 	// multimap <标识符名称， 作用域> 变量名列表
 	multimap<string, string> idNameList = {
-		{"scanf", "0"},
-		{"printf", "0"}
+		{"scanf", "1"},
+		{"printf", "1"}
 	};
 	// map <<标识符名称， 作用域>, 结点指针> 变量列表
 	map<pair<string, string>, TreeNode*> idList = {
-		{make_pair("scanf", "0"), nodeScanf},
-		{make_pair("printf", "0"), nodePrintf}
+		{make_pair("scanf", "1"), nodeScanf},
+		{make_pair("printf", "1"), nodePrintf}
 	};
 
 	int yylex();
@@ -47,7 +47,7 @@
 %token EQ GRAEQ LESEQ NEQ  GRA LES
 
 // 普通计算
-%token PLUS MINUS MUL DIV MOD AND OR NOT
+%token PLUS MINUS MUL DIV MOD AND OR NOT INC DEC
 
 // 特殊单词
 %token IDENTIFIER INTEGER CHAR BOOL STRING
@@ -87,8 +87,18 @@ pIdentifier
 
 // 数组标识符
 arrayIdentifier
-: pIdentifier LBRACKET expr RBRACKET {}
-| arrayIdentifier LBRACKET expr RBRACKET {}
+: pIdentifier LBRACKET expr RBRACKET {
+	$$ = new TreeNode(lineno, NODE_OP);
+	$$->optype = OP_INDEX;
+	$$->addChild($1);
+	$$->addChild($3);
+  }
+| arrayIdentifier LBRACKET expr RBRACKET {
+	$$ = new TreeNode(lineno, NODE_OP);
+	$$->optype = OP_INDEX;
+	$$->addChild($1);
+	$$->addChild($3);
+  }
 ;
 
 identifier
@@ -100,8 +110,9 @@ identifier
 
 	// 搜索变量是否已经声明
 	auto it = idNameList.find($$->var_name);
+	int resScoptCmp;
 	while (idNameCount--) {
-		int resScoptCmp = scopeCmp(presentScope, it->second);
+		resScoptCmp = scopeCmp(presentScope, it->second);
 		if (resScoptCmp >= 0){
 			// 寻找最近的定义
 			if (resScoptCmp < minDefDis) {
@@ -113,7 +124,7 @@ identifier
 		it++;
 	}
 	if (declCnt == 0) {
-		string t = "Undeclared identifier :\"" + $1->var_name + "\", scope : " + presentScope;
+		string t = "Undeclared identifier :'" + $1->var_name + "', scope : " + to_string(resScoptCmp);
 		yyerror(t.c_str());
 	}
 };
@@ -183,7 +194,7 @@ constDefs
 
 constDef
 : pDeclIdentifier ASSIGN INTEGER {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_ASSIGN; $$->addChild($1); $$->addChild($3);}
-| constArrayIdentifier ASSIGN LBRACE ArrayInitVal RBRACE {}
+| constArrayIdentifier ASSIGN LBRACE ArrayInitVal RBRACE {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_ASSIGN; $$->addChild($1); $$->addChild($4);}
 ;
 
 // 数组初始化值
@@ -209,16 +220,26 @@ varDefs
 ;
 
 varDef
-: declCompIdentifier {}
-| declCompIdentifier ASSIGN expr {}
-| constArrayIdentifier ASSIGN LBRACE ArrayInitVal RBRACE {}
+: declCompIdentifier {$$ = new TreeNode(lineno, NODE_STMT); $$->stype = STMT_DECL; $$->addChild($1);}
+| declCompIdentifier ASSIGN expr {
+	$$ = new TreeNode(lineno, NODE_OP);
+	$$->optype = OP_ASSIGN;
+	$$->addChild($1);
+	$$->addChild($3);
+  }
+| constArrayIdentifier ASSIGN LBRACE ArrayInitVal RBRACE {
+	$$ = new TreeNode(lineno, NODE_OP);
+	$$->optype = OP_ASSIGN;
+	$$->addChild($1);
+	$$->addChild($4);
+  }
 ;
 
 // ---------------- 函数声明 -------------------
 
 funcDef
 : basicType pDeclIdentifier LPAREN funcFParams RPAREN block {
-	scopePush();
+	// scopePush();
 	$$ = new TreeNode(lineno, NODE_STMT);
 	$$->stype = STMT_DECL;
 	$$->addChild($1);
@@ -227,18 +248,18 @@ funcDef
 	params->addChild($4);
 	$$->addChild(params);
 	$$->addChild($6);
-	scopePop();
-}
+	// scopePop();
+  }
 | basicType pDeclIdentifier LPAREN RPAREN block {
-	scopePush();
+	// scopePush();
 	$$ = new TreeNode(lineno, NODE_STMT);
 	$$->stype = STMT_DECL;
 	$$->addChild($1);
 	$$->addChild($2);
 	$$->addChild(new TreeNode(lineno, NODE_PARAM));
 	$$->addChild($5);
-	scopePop();
-}
+	// scopePop();
+  }
 ;
 
 funcFParams
@@ -254,11 +275,11 @@ funcFParam
 
 block
 : LBRACE blockItems RBRACE {
-	scopePush();
+	// scopePush();
 	$$ = new TreeNode(lineno, NODE_STMT);
 	$$->stype = STMT_BLOCK;
 	$$->addChild($2);
-	scopePop();
+	// scopePop();
 };
 
 blockItems
@@ -280,43 +301,77 @@ stmt
 	$$->optype = OP_ASSIGN;
 	$$->addChild($1);
 	$$->addChild($3);
-}
+  }
+| compIdentifier PLUSASSIGN expr SEMICOLON {
+	$$ = new TreeNode(lineno, NODE_OP);
+	$$->optype = OP_ADDASSIGN;
+	$$->addChild($1);
+	$$->addChild($3);
+  }
+| compIdentifier MINUSASSIGN expr SEMICOLON {
+	$$ = new TreeNode(lineno, NODE_OP);
+	$$->optype = OP_SUBASSIGN;
+	$$->addChild($1);
+	$$->addChild($3);
+  }
+| compIdentifier MULASSIGN expr SEMICOLON {
+	$$ = new TreeNode(lineno, NODE_OP);
+	$$->optype = OP_MULASSIGN;
+	$$->addChild($1);
+	$$->addChild($3);
+  }
+| compIdentifier DIVASSIGN expr SEMICOLON {
+	$$ = new TreeNode(lineno, NODE_OP);
+	$$->optype = OP_DIVASSIGN;
+	$$->addChild($1);
+	$$->addChild($3);
+  }
 
 | IF LPAREN cond RPAREN stmt ELSE stmt {
-	scopePush();
+	// scopePush();
 	$$ = new TreeNode(lineno, NODE_STMT);
 	$$->stype = STMT_IFELSE;
 	$$->addChild($3);
 	$$->addChild($5);
 	$$->addChild($7);
-	scopePop();
-}
+	// scopePop();
+  }
 | IF LPAREN cond RPAREN stmt {
-	scopePush();
+	// scopePush();
 	$$ = new TreeNode(lineno, NODE_STMT);
 	$$->stype = STMT_IF;
 	$$->addChild($3);
 	$$->addChild($5);
-	scopePop();
-}
+	// scopePop();
+  }
 | WHILE LPAREN cond RPAREN stmt {
-	scopePush();
+	// scopePush();
 	$$ = new TreeNode(lineno, NODE_STMT);
 	$$->stype = STMT_WHILE;
 	$$->addChild($3);
 	$$->addChild($5);
-	scopePop();
-}
-| FOR LPAREN expr SEMICOLON cond SEMICOLON expr RPAREN stmt {
-	scopePush();
+	// scopePop();
+  }
+| FOR LPAREN basicType varDefs SEMICOLON cond SEMICOLON expr RPAREN stmt {
+	// scopePush();
 	$$ = new TreeNode(lineno, NODE_STMT);
 	$$->stype = STMT_FOR;
 	$$->addChild($3);
 	$$->addChild($5);
 	$$->addChild($7);
 	$$->addChild($9);
-	scopePop();
-}
+	// scopePop();
+  }
+| FOR LPAREN expr SEMICOLON cond SEMICOLON expr RPAREN stmt {
+	// scopePush();
+	$$ = new TreeNode(lineno, NODE_STMT);
+	$$->stype = STMT_FOR;
+	$$->addChild($3);
+	$$->addChild($5);
+	$$->addChild($7);
+	$$->addChild($9);
+	// scopePop();
+  }
 
 | BREAK SEMICOLON {$$ = new TreeNode(lineno, NODE_STMT); $$->stype = STMT_BREAK;}
 | CONTINUE SEMICOLON{$$ = new TreeNode(lineno, NODE_STMT); $$->stype = STMT_CONTINUE;}
@@ -353,25 +408,38 @@ mulExpr
 unaryExpr
 : primaryExpr {$$ = $1;}
 | pIdentifier LPAREN funcRParams RPAREN {
-	scopePush();
+	// scopePush();
 	$$ = new TreeNode(lineno, NODE_STMT);
 	$$->stype = STMT_FUNCALL;
+	$$->addChild($1);
 	$$->addChild($3);
-	scopePop();
-}
+	// scopePop();
+  }
+| pIdentifier LPAREN RPAREN {
+	// scopePush();
+	$$ = new TreeNode(lineno, NODE_STMT);
+	$$->stype = STMT_FUNCALL;
+	$$->addChild($1);
+	// scopePop();
+  }
 | PLUS unaryExpr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_POS; $$->addChild($2);}
 | MINUS unaryExpr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_NAG; $$->addChild($2);}
 | NOT unaryExpr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_NOT; $$->addChild($2);}
+| unaryExpr INC {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_INC; $$->addChild($1);}
+| unaryExpr DEC {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_DEC; $$->addChild($1);}
 ;
 
 // 基本表达式
 primaryExpr
 : LPAREN expr RPAREN {$$ = $2;}
-| arrayIdentifier {$$ = $1;}
+| compIdentifier {$$ = $1;}
 | INTEGER {$$ = $1;}
+| BOOL {$$ = $1;}
+| CHAR {$$ = $1;}
+| STRING {$$ = $1;}
 ;
 
-// 函数调用
+// 函数实参列表
 funcRParams
 : expr {$$ = $1;}
 | funcRParams COMMA expr {$$ = $1; $$->addSibling($3);}
@@ -436,13 +504,14 @@ int scopeCmp(string presScope, string varScope) {
 }
 
 void scopePush() {
-	top++;
-	// presentScope[top] = max_scope_id;
+	cout << "push"<<endl;
 	presentScope += max_scope_id;
 	max_scope_id = SCOPT_ID_BASE;
+	top++;
 }
 
 void scopePop() {
+	cout<<"pop"<<endl;;
 	max_scope_id = presentScope[top] + 1;
 	presentScope = presentScope.substr(0, presentScope.length() - 1);
 	top--;

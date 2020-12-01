@@ -198,8 +198,12 @@ string TreeNode::opType2String(OperatorType type) {
 		return "grater";
 	case OP_LES:
 		return "less";
-	case OP_ADD:
-		return "add";
+    case OP_INC:
+        return "auto increment";
+    case OP_DEC:
+        return "auto decrement";
+    case OP_ADD:
+        return "add";
 	case OP_SUB:
 		return "sub";
 	case OP_POS:
@@ -218,6 +222,8 @@ string TreeNode::opType2String(OperatorType type) {
 		return "and";
 	case OP_OR:
         return "or";
+    case OP_INDEX:
+        return "index";
     default:
         return "?";
     }

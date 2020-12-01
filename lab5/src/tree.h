@@ -31,6 +31,8 @@ enum OperatorType
 	OP_ASSIGN,	// =
 	OP_GRA,		// >
 	OP_LES,		// <
+	OP_INC,		// ++
+	OP_DEC,		// --
 	OP_ADD,		// +
 	OP_SUB,		// -
 	OP_POS,		// + (一元运算符)
@@ -41,6 +43,7 @@ enum OperatorType
 	OP_NOT,		// !
 	OP_AND, 	// &&
 	OP_OR,		// ||
+	OP_INDEX,	// [] 下标运算符
 };
 
 enum StmtType {

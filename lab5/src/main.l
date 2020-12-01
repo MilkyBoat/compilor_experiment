@@ -3,7 +3,7 @@
 #include "common.h"
 #include "main.tab.h"  // yacc header
 
-int lineno=1;
+int lineno = 1;
 %}
 
 BLOCKCOMMENT_BEGIN "/*"
@@ -20,8 +20,8 @@ DECINT -?[0-9]+
 HEXINT 0[Xx][0-9a-fA-F]+
 
 BOOL (true)|(false)
+STRING \"[^(\")]*\"
 CHAR \'.?\'
-STRING \"[^(\\")]*\"
 
 IDENTIFIER [[:alpha:]_][[:alpha:][:digit:]_]*
 
@@ -58,6 +58,8 @@ IDENTIFIER [[:alpha:]_][[:alpha:][:digit:]_]*
 "-=" return MINUSASSIGN;
 "*=" return MULASSIGN;
 "/=" return DIVASSIGN;
+"++" return INC;
+"--" return DEC;
 ">" return GRA;
 "<" return LES;
 "+" return PLUS;

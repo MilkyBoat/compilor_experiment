@@ -5,7 +5,7 @@ using namespace std;
 
 #define MAX_PARAM 16
 #define MAX_ARRAY_DIM 8
-#define MAX_SCOPE_STACK 128
+#define MAX_SCOPE_STACK 32
 #define SCOPT_ID_BASE '1'
 
 enum ValueType
