@@ -102,7 +102,7 @@ public:
 	static string sType2String (StmtType type);
 };
 
-static TreeNode* nodeScanf = new TreeNode(0, NODE_STMT);
-static TreeNode* nodePrintf = new TreeNode(0, NODE_STMT);
+static TreeNode* nodeScanf = new TreeNode(0, NODE_VAR);
+static TreeNode* nodePrintf = new TreeNode(0, NODE_VAR);
 
 #endif

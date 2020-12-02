@@ -2,7 +2,7 @@ CC := g++
 CFLAGS := -Wall -Wextra -std=c++11  # without debug
 TARGET := ./bin/main
 
-all: run
+all: run test
 
 src/main.l.yy.c: src/main.l
 	 flex --noyywrap -o src/main.l.yy.cpp  src/main.l
@@ -28,6 +28,5 @@ clean:
 	rm -f src/*.output src/main.l.yy.cpp src/main.tab.cpp src/main.tab.h src/main.output src/pch.h.gch $(TARGET) *.o ./bin/* 
 
 test: 
-	# ./bin/main tests/1.c > result.txt
-	./bin/main tests/1.c
+	./bin/main tests/1.c > result.txt
 	

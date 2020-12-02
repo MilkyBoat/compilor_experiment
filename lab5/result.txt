@@ -1,3 +1,106 @@
-error: Undeclared identifier :"scanf", scope : name: , at line 9
-error: syntax error, at line 9
-@0	line 0	<program>,	child:-	
+@0	line 0	<program>,	child:	@1	
+@1	line 24	<statment>, declaration	,	child:	@2	@3	@4	@5	
+@2	line 4	<type>, ?,	child:-	
+@3	line 4	<var>,	name: main,	scope: 1 ,	child:-	
+@4	line 24	<function parameter>,	child:-	
+@5	line 24	<statment>, block	,	child:	@6	@11	@15	@19	@23	@30	@31	
+@6	line 5	<statment>, declaration	,	child:	@7	@8	@10	
+@7	line 5	<type>, int,	child:-	
+@8	line 5	<statment>, declaration	,	child:	@9	
+@9	line 5	<var>,	name: a,	scope: 1 1 1 ,	child:-	
+@10	line 5	<var>,	name: a,	scope: 1 1 1 ,	child:-	
+@11	line 6	<operation>, assign	,	child:	@12	@13	
+@12	line 5	<var>,	name: a,	scope: 1 1 1 ,	child:-	
+@13	line 6	<expression>,	child:	@14	
+@14	line 6	<const>, 10,	child:-	
+@15	line 7	<operation>, assign	,	child:	@16	@17	
+@16	line 5	<var>,	name: s,	scope: 1 1 1 ,	child:-	
+@17	line 7	<expression>,	child:	@18	
+@18	line 7	<const>, 0,	child:-	
+@19	line 8	<statment>, declaration	,	child:	@20	@21	
+@20	line 8	<type>, char,	child:-	
+@21	line 8	<statment>, declaration	,	child:	@22	
+@22	line 8	<var>,	name: ch,	scope: 1 1 1 ,	child:-	
+@23	line 9	<expression>,	child:	@24	
+@24	line 9	<statment>, function call	,	child:	@25	@26	@28	
+@25	line 0	<var>,	name: scanf,	scope: 1 ,	child:-	
+@26	line 9	<expression>,	child:	@29	
+@29	line 9	<const>, %d,	child:-	
+@28	line 9	<expression>,	child:	@29	
+@29	line 9	<const>, %d,	child:-	
+@30	line 9	<statment>, skip	,	child:-	
+@31	line 23	<statment>, while	,	child:	@32	@59	
+@32	line 10	<expression>,	child:	@33	
+@33	line 10	<operation>, or	,	child:	@34	@45	
+@34	line 10	<operation>, and	,	child:	@35	@40	
+@35	line 10	<operation>, grater	,	child:	@36	@38	
+@36	line 10	<expression>,	child:	@37	
+@37	line 5	<var>,	name: a,	scope: 1 1 1 ,	child:-	
+@38	line 10	<expression>,	child:	@39	
+@39	line 10	<const>, 0,	child:-	
+@40	line 10	<operation>, less equal	,	child:	@41	@43	
+@41	line 10	<expression>,	child:	@42	
+@42	line 5	<var>,	name: a,	scope: 1 1 1 ,	child:-	
+@43	line 10	<expression>,	child:	@44	
+@44	line 10	<const>, 10,	child:-	
+@45	line 10	<operation>, and	,	child:	@46	@53	
+@46	line 10	<operation>, equal	,	child:	@47	@51	
+@47	line 10	<expression>,	child:	@48	
+@48	line 10	<operation>, multiply	,	child:	@49	@50	
+@49	line 5	<var>,	name: a,	scope: 1 1 1 ,	child:-	
+@50	line 10	<const>, 100,	child:-	
+@51	line 10	<expression>,	child:	@52	
+@52	line 10	<const>, 10,	child:-	
+@53	line 10	<operation>, equal	,	child:	@54	@57	
+@54	line 10	<expression>,	child:	@55	
+@55	line 10	<operation>, not	,	child:	@56	
+@56	line 5	<var>,	name: a,	scope: 1 1 1 ,	child:-	
+@57	line 10	<expression>,	child:	@58	
+@58	line 10	<const>, 10,	child:-	
+@59	line 23	<statment>, block	,	child:	@60	@64	@68	@72	@76	
+@60	line 11	<operation>, sub assign	,	child:	@61	@62	
+@61	line 5	<var>,	name: a,	scope: 1 1 1 ,	child:-	
+@62	line 11	<expression>,	child:	@63	
+@63	line 11	<const>, 1,	child:-	
+@64	line 12	<statment>, declaration	,	child:	@65	@66	
+@65	line 12	<type>, int,	child:-	
+@66	line 12	<statment>, declaration	,	child:	@67	
+@67	line 12	<var>,	name: a,	scope: 1 1 1 1 1 ,	child:-	
+@68	line 13	<operation>, assign	,	child:	@69	@70	
+@69	line 12	<var>,	name: a,	scope: 1 1 1 1 1 ,	child:-	
+@70	line 13	<expression>,	child:	@71	
+@71	line 13	<const>, 10,	child:-	
+@72	line 14	<operation>, add assign	,	child:	@73	@74	
+@73	line 5	<var>,	name: s,	scope: 1 1 1 ,	child:-	
+@74	line 14	<expression>,	child:	@75	
+@75	line 12	<var>,	name: a,	scope: 1 1 1 1 1 ,	child:-	
+@76	line 23	<statment>, if	,	child:	@77	@84	
+@77	line 15	<expression>,	child:	@78	
+@78	line 15	<operation>, less	,	child:	@79	@82	
+@79	line 15	<expression>,	child:	@80	
+@80	line 15	<operation>, nagative	,	child:	@81	
+@81	line 5	<var>,	name: s,	scope: 1 1 1 ,	child:-	
+@82	line 15	<expression>,	child:	@83	
+@83	line 15	<const>, -10,	child:-	
+@84	line 22	<statment>, block	,	child:	@85	@92	@93	@97	@101	
+@85	line 16	<expression>,	child:	@86	
+@86	line 16	<statment>, function call	,	child:	@87	@88	@90	
+@87	line 0	<var>,	name: printf,	scope: 1 ,	child:-	
+@88	line 16	<expression>,	child:	@89	
+@89	line 16	<const>, result is: %d\n,	child:-	
+@90	line 16	<expression>,	child:	@91	
+@91	line 5	<var>,	name: s,	scope: 1 1 1 ,	child:-	
+@92	line 16	<statment>, skip	,	child:-	
+@93	line 17	<statment>, declaration	,	child:	@94	@95	
+@94	line 17	<type>, int,	child:-	
+@95	line 17	<statment>, declaration	,	child:	@96	
+@96	line 17	<var>,	name: b,	scope: 1 1 1 1 1 1 1 ,	child:-	
+@97	line 18	<operation>, assign	,	child:	@98	@99	
+@98	line 17	<var>,	name: b,	scope: 1 1 1 1 1 1 1 ,	child:-	
+@99	line 18	<expression>,	child:	@100	
+@100	line 18	<const>, 10,	child:-	
+@101	line 21	<statment>, for	,	child:	@102	@103	@104	@105	
+@102	line 19	<type>, int,	child:-	
+@103	line 19	<const>, 0,	child:-	
+@104	line 19	<var>,	name: b,	scope: ,	child:-	
+@105	line 19	<var>,	name: i,	scope: ,	child:-	

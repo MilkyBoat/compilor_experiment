@@ -6,20 +6,14 @@
 	extern int lineno;
 
 	// max_scope_id 是堆栈下一层结点的最大编号
-	unsigned char max_scope_id = SCOPT_ID_BASE;
-	string presentScope = "1";
-	unsigned int top = 0;
+	extern unsigned char max_scope_id;
+	extern string presentScope;
+	extern unsigned int top;
 
 	// multimap <标识符名称， 作用域> 变量名列表
-	multimap<string, string> idNameList = {
-		{"scanf", "1"},
-		{"printf", "1"}
-	};
+	extern multimap<string, string> idNameList;
 	// map <<标识符名称， 作用域>, 结点指针> 变量列表
-	map<pair<string, string>, TreeNode*> idList = {
-		{make_pair("scanf", "1"), nodeScanf},
-		{make_pair("printf", "1"), nodePrintf}
-	};
+	extern map<pair<string, string>, TreeNode*> idList;
 
 	int yylex();
 	int yyerror( char const * );
@@ -238,8 +232,7 @@ varDef
 // ---------------- 函数声明 -------------------
 
 funcDef
-: basicType pDeclIdentifier LPAREN funcFParams RPAREN block {
-	// scopePush();
+: basicType pDeclIdentifier funcLPAREN funcFParams RPAREN block {
 	$$ = new TreeNode(lineno, NODE_STMT);
 	$$->stype = STMT_DECL;
 	$$->addChild($1);
@@ -248,19 +241,20 @@ funcDef
 	params->addChild($4);
 	$$->addChild(params);
 	$$->addChild($6);
-	// scopePop();
+	scopePop();
   }
-| basicType pDeclIdentifier LPAREN RPAREN block {
-	// scopePush();
+| basicType pDeclIdentifier funcLPAREN RPAREN block {
 	$$ = new TreeNode(lineno, NODE_STMT);
 	$$->stype = STMT_DECL;
 	$$->addChild($1);
 	$$->addChild($2);
 	$$->addChild(new TreeNode(lineno, NODE_PARAM));
 	$$->addChild($5);
-	// scopePop();
+	scopePop();
   }
 ;
+
+funcLPAREN : LPAREN {scopePush();};
 
 funcFParams
 : funcFParam {$$ = $1;}
@@ -275,11 +269,9 @@ funcFParam
 
 block
 : LBRACE blockItems RBRACE {
-	// scopePush();
 	$$ = new TreeNode(lineno, NODE_STMT);
 	$$->stype = STMT_BLOCK;
 	$$->addChild($2);
-	// scopePop();
 };
 
 blockItems
@@ -328,49 +320,44 @@ stmt
   }
 
 | IF LPAREN cond RPAREN stmt ELSE stmt {
-	// scopePush();
 	$$ = new TreeNode(lineno, NODE_STMT);
 	$$->stype = STMT_IFELSE;
 	$$->addChild($3);
 	$$->addChild($5);
 	$$->addChild($7);
-	// scopePop();
+	scopePop();
   }
 | IF LPAREN cond RPAREN stmt {
-	// scopePush();
 	$$ = new TreeNode(lineno, NODE_STMT);
 	$$->stype = STMT_IF;
 	$$->addChild($3);
 	$$->addChild($5);
-	// scopePop();
+	scopePop();
   }
 | WHILE LPAREN cond RPAREN stmt {
-	// scopePush();
 	$$ = new TreeNode(lineno, NODE_STMT);
 	$$->stype = STMT_WHILE;
 	$$->addChild($3);
 	$$->addChild($5);
-	// scopePop();
+	scopePop();
   }
 | FOR LPAREN basicType varDefs SEMICOLON cond SEMICOLON expr RPAREN stmt {
-	// scopePush();
 	$$ = new TreeNode(lineno, NODE_STMT);
 	$$->stype = STMT_FOR;
 	$$->addChild($3);
 	$$->addChild($5);
 	$$->addChild($7);
 	$$->addChild($9);
-	// scopePop();
+	scopePop();
   }
 | FOR LPAREN expr SEMICOLON cond SEMICOLON expr RPAREN stmt {
-	// scopePush();
 	$$ = new TreeNode(lineno, NODE_STMT);
 	$$->stype = STMT_FOR;
 	$$->addChild($3);
 	$$->addChild($5);
 	$$->addChild($7);
 	$$->addChild($9);
-	// scopePop();
+	scopePop();
   }
 
 | BREAK SEMICOLON {$$ = new TreeNode(lineno, NODE_STMT); $$->stype = STMT_BREAK;}
@@ -408,19 +395,15 @@ mulExpr
 unaryExpr
 : primaryExpr {$$ = $1;}
 | pIdentifier LPAREN funcRParams RPAREN {
-	// scopePush();
 	$$ = new TreeNode(lineno, NODE_STMT);
 	$$->stype = STMT_FUNCALL;
 	$$->addChild($1);
 	$$->addChild($3);
-	// scopePop();
   }
 | pIdentifier LPAREN RPAREN {
-	// scopePush();
 	$$ = new TreeNode(lineno, NODE_STMT);
 	$$->stype = STMT_FUNCALL;
 	$$->addChild($1);
-	// scopePop();
   }
 | PLUS unaryExpr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_POS; $$->addChild($2);}
 | MINUS unaryExpr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_NAG; $$->addChild($2);}
@@ -474,48 +457,6 @@ relExpr
 ;
 
 %%
-
-/*
- *  输入参数： 
- *    presScope： 当前变量所处的作用域
- *    varScope:   希望进行比较的已声明变量作用域
- *
- *  返回值：
- *    0： 作用域相同，
- *          若为变量声明语句，为变量重定义。
- *   >0： 已声明变量作用域在当前作用域外层，返回作用域距离（堆栈层数）
- *          若为声明语句，不产生冲突，当前变量为新定义变量，
- *          若为使用语句，当前变量为新定义变量。
- *   -1：已声明变量作用域在当前作用域内层，
- *          若为声明语句，不可能出现这种情况，
- *          若为使用语句，不产生冲突。
- *   -2：两个作用域互不包含，任何情况下都不会互相干扰
- */
-int scopeCmp(string presScope, string varScope) {
-	unsigned int plen = presScope.length(), vlen = varScope.length();
-	unsigned int minlen = min(plen, vlen);
-	if (presScope.substr(0, minlen) == varScope.substr(0, minlen)) {
-		if (plen >= vlen)
-			return plen - vlen;
-		else
-			return -1;
-	}
-	return -2;
-}
-
-void scopePush() {
-	cout << "push"<<endl;
-	presentScope += max_scope_id;
-	max_scope_id = SCOPT_ID_BASE;
-	top++;
-}
-
-void scopePop() {
-	cout<<"pop"<<endl;;
-	max_scope_id = presentScope[top] + 1;
-	presentScope = presentScope.substr(0, presentScope.length() - 1);
-	top--;
-}
 
 int yyerror(char const * message)
 {

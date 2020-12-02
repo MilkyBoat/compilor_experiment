@@ -8,6 +8,11 @@ using namespace std;
 #define MAX_SCOPE_STACK 32
 #define SCOPT_ID_BASE '1'
 
+// #define DEBUG
+#ifdef DEBUG
+#define SCOPE_DEBUG
+#endif
+
 enum ValueType
 {
     VALUE_BOOL,
