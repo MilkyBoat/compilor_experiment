@@ -52,21 +52,21 @@ int scopeCmp(string presScope, string varScope) {
 }
 
 void scopePush() {
-#ifdef SCOPE_DEBUG
-	cout << "push -> " << presentScope << endl;
-#endif
 	presentScope += max_scope_id;
 	max_scope_id = SCOPT_ID_BASE;
 	top++;
+#ifdef SCOPE_DEBUG
+	cout << "* push -> " << presentScope << ", at line " << lineno << endl;
+#endif
 }
 
 void scopePop() {
-#ifdef SCOPE_DEBUG
-	cout << "pop -> " << presentScope << endl;
-#endif
 	max_scope_id = presentScope[top] + 1;
 	presentScope = presentScope.substr(0, presentScope.length() - 1);
 	top--;
+#ifdef SCOPE_DEBUG
+	cout << "* pop -> " << presentScope << ", at line " << lineno << endl;
+#endif
 }
 
 %}
@@ -211,6 +211,9 @@ IDENTIFIER [[:alpha:]_][[:alpha:][:digit:]_]*
     TreeNode* node = new TreeNode(lineno, NODE_VAR);
     node->var_name = string(yytext);
     yylval = node;
+#ifdef ID_TOKEN_DEBUG
+    cout << "% get IDENTIFIER :" << yytext <<endl;
+#endif
     return IDENTIFIER;
 }
 

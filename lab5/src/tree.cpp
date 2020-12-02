@@ -103,6 +103,10 @@ void TreeNode::printSpecialInfo() {
             break;
         case NODE_STMT:
             cout << ", " << sType2String(this->stype) << "\t";
+            if (this->stype == STMT_DECL) {
+                if (this->child && this->child->sibling && this->child->sibling->type)
+                    cout << this->child->sibling->type->getTypeInfo() << "\t";
+            }
             break;
         case NODE_TYPE:
             cout << ", " << this->type->getTypeInfo();
@@ -132,8 +136,10 @@ string TreeNode::nodeType2String (NodeType type){
         return "<statment>";
     case NODE_PROG:
         return "<program>";
+    case NODE_VARLIST:
+        return "<variable list>";
     case NODE_PARAM:
-        return "<function parameter>";
+        return "function format parameter";
     case NODE_OP:
         return "<operation>";
     default:
@@ -215,7 +221,7 @@ string TreeNode::opType2String(OperatorType type) {
 	case OP_DIV:
 		return "divide";
 	case OP_MOD:
-		return "multiply";
+		return "Modulo";
 	case OP_NOT:
 		return "not";
 	case OP_AND:
@@ -231,6 +237,7 @@ string TreeNode::opType2String(OperatorType type) {
 
 void TreeNode::printConstVal() {
     if (this->nodeType == NODE_CONST){
+        cout << this->type->getTypeInfo() << ":";
         switch (this->type->type)
         {
         case VALUE_BOOL:
@@ -249,6 +256,7 @@ void TreeNode::printConstVal() {
             cout << str_val;
             break;
         default:
+            cout << "-";
             break;
         }
     }

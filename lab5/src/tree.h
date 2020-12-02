@@ -15,6 +15,7 @@ enum NodeType
 	NODE_PROG,
 	NODE_STMT,
 	NODE_EXPR,
+	NODE_VARLIST,
 	NODE_PARAM,
 };
 

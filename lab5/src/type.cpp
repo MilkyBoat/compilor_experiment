@@ -29,6 +29,8 @@ string Type::getTypeInfo(ValueType type) {
                 return buf;
             }
             return "";
+        case VALUE_VOID:
+            return "void";
         default:
             return "?";
     }

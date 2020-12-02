@@ -75,8 +75,15 @@ compIdentifier
 // 指针标识符
 pIdentifier
 : identifier {$$ = new TreeNode($1);}
-| MUL pIdentifier {$$ = $1; $$->pointLevel++;}
-| ADDR pIdentifier {$$ = $1; $$->pointLevel--;}
+| MUL pIdentifier {$$ = $2; $$->pointLevel++;}
+| ADDR pIdentifier {
+	$$ = $2; 
+	$$->pointLevel--;
+	#ifdef POINT_DEBUG
+		cout << "$ pIdentifier : " << $$->var_name 
+			 << ", pointlevel : " << $$->pointLevel << endl;
+	#endif
+  }
 ;
 
 // 数组标识符
@@ -155,6 +162,9 @@ declIdentifier
 : IDENTIFIER {
 	$$ = $1;
 	$$->var_scope = presentScope;
+	#ifdef ID_REDUCE_DEBUG
+		cout<<"$ reduce declIdentifier : "<<$1->var_name<<", at scope :"<<presentScope<<endl;
+	#endif
 	if (idList.count(make_pair($1->var_name, $1->var_scope)) != 0) {
 		string t = "Redeclared identifier : " + $1->var_name;
 		yyerror(t.c_str());
@@ -182,8 +192,8 @@ constDecl
 
 // 连续常量定义
 constDefs
-: constDef {$$ = $1;}
-| constDefs COMMA constDef {$$ = $1; $$->addSibling($3);}
+: constDef {$$ = new TreeNode(lineno, NODE_VARLIST); $$->addChild($1);}
+| constDefs COMMA constDef {$$ = $1; $$->addChild($3);}
 ;
 
 constDef
@@ -193,8 +203,8 @@ constDef
 
 // 数组初始化值
 ArrayInitVal
-: INTEGER {$$ = $1;}
-| ArrayInitVal COMMA INTEGER {$$ = $1; $$->addSibling($3);}
+: INTEGER {$$ = new TreeNode(lineno, NODE_VARLIST); $$->addChild($1);}
+| ArrayInitVal COMMA INTEGER {$$ = $1; $$->addChild($3);}
 ;
 
 varDecl
@@ -209,12 +219,12 @@ varDecl
 
 // 连续变量定义
 varDefs
-: varDef {$$ = $1;}
-| varDefs COMMA varDef {$$ = $1; $$->addSibling($2);}
+: varDef {$$ = new TreeNode(lineno, NODE_VARLIST); $$->addChild($1);}
+| varDefs COMMA varDef {$$ = $1; $$->addChild($3);}
 ;
 
 varDef
-: declCompIdentifier {$$ = new TreeNode(lineno, NODE_STMT); $$->stype = STMT_DECL; $$->addChild($1);}
+: declCompIdentifier {$$ = $1;}
 | declCompIdentifier ASSIGN expr {
 	$$ = new TreeNode(lineno, NODE_OP);
 	$$->optype = OP_ASSIGN;
@@ -237,7 +247,7 @@ funcDef
 	$$->stype = STMT_DECL;
 	$$->addChild($1);
 	$$->addChild($2);
-	TreeNode* params = new TreeNode(lineno, NODE_PARAM);
+	TreeNode* params = new TreeNode(lineno, NODE_VARLIST);
 	params->addChild($4);
 	$$->addChild(params);
 	$$->addChild($6);
@@ -248,7 +258,7 @@ funcDef
 	$$->stype = STMT_DECL;
 	$$->addChild($1);
 	$$->addChild($2);
-	$$->addChild(new TreeNode(lineno, NODE_PARAM));
+	$$->addChild(new TreeNode(lineno, NODE_VARLIST));
 	$$->addChild($5);
 	scopePop();
   }
@@ -257,8 +267,8 @@ funcDef
 funcLPAREN : LPAREN {scopePush();};
 
 funcFParams
-: funcFParam {$$ = $1;}
-| funcFParams COMMA funcFParam {$$ = $1; $$->addSibling($3);}
+: funcFParam {$$ = new TreeNode(lineno, NODE_VARLIST); $$->addChild($1);}
+| funcFParams COMMA funcFParam {$$ = $1; $$->addChild($3);}
 ;
 
 funcFParam
@@ -287,12 +297,15 @@ blockItem
 stmt
 : SEMICOLON {$$ = new TreeNode(lineno, NODE_STMT); $$->stype = STMT_SKIP;}
 | block {$$ = $1;}
-| expr {$$ = $1;}
+| expr SEMICOLON {$$ = $1;}
 | compIdentifier ASSIGN expr SEMICOLON {
 	$$ = new TreeNode(lineno, NODE_OP);
 	$$->optype = OP_ASSIGN;
 	$$->addChild($1);
 	$$->addChild($3);
+	#ifdef ASSIGN_DEBUG
+		cout << "$ reduce ASSIGN at scope : " << presentScope << ", at line " << lineno << endl;
+	#endif
   }
 | compIdentifier PLUSASSIGN expr SEMICOLON {
 	$$ = new TreeNode(lineno, NODE_OP);
@@ -326,6 +339,9 @@ stmt
 	$$->addChild($5);
 	$$->addChild($7);
 	scopePop();
+	#ifdef IFELSE_DEBUG
+		cout << "$ reduce IF-ELSE at scope : " << presentScope << ", at line " << lineno << endl;
+	#endif
   }
 | IF LPAREN cond RPAREN stmt {
 	$$ = new TreeNode(lineno, NODE_STMT);
@@ -333,6 +349,9 @@ stmt
 	$$->addChild($3);
 	$$->addChild($5);
 	scopePop();
+	#ifdef IF_DEBUG
+		cout << "$ reduce IF at scope : " << presentScope << ", at line " << lineno << endl;
+	#endif
   }
 | WHILE LPAREN cond RPAREN stmt {
 	$$ = new TreeNode(lineno, NODE_STMT);
@@ -340,14 +359,21 @@ stmt
 	$$->addChild($3);
 	$$->addChild($5);
 	scopePop();
+	#ifdef WHILE
+		cout << "$ reduce WHILE at scope : " << presentScope << ", at line " << lineno << endl;
+	#endif
   }
 | FOR LPAREN basicType varDefs SEMICOLON cond SEMICOLON expr RPAREN stmt {
 	$$ = new TreeNode(lineno, NODE_STMT);
 	$$->stype = STMT_FOR;
-	$$->addChild($3);
-	$$->addChild($5);
-	$$->addChild($7);
-	$$->addChild($9);
+	TreeNode* forDecl = new TreeNode(lineno, NODE_STMT);
+	forDecl->stype = STMT_DECL;
+	forDecl->addChild($3);
+	forDecl->addChild($4);
+	$$->addChild(forDecl);
+	$$->addChild($6);
+	$$->addChild($8);
+	$$->addChild($10);
 	scopePop();
   }
 | FOR LPAREN expr SEMICOLON cond SEMICOLON expr RPAREN stmt {
@@ -394,38 +420,44 @@ mulExpr
 // 一元表达式
 unaryExpr
 : primaryExpr {$$ = $1;}
-| pIdentifier LPAREN funcRParams RPAREN {
-	$$ = new TreeNode(lineno, NODE_STMT);
-	$$->stype = STMT_FUNCALL;
-	$$->addChild($1);
-	$$->addChild($3);
-  }
-| pIdentifier LPAREN RPAREN {
-	$$ = new TreeNode(lineno, NODE_STMT);
-	$$->stype = STMT_FUNCALL;
-	$$->addChild($1);
-  }
-| PLUS unaryExpr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_POS; $$->addChild($2);}
-| MINUS unaryExpr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_NAG; $$->addChild($2);}
-| NOT unaryExpr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_NOT; $$->addChild($2);}
-| unaryExpr INC {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_INC; $$->addChild($1);}
-| unaryExpr DEC {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_DEC; $$->addChild($1);}
+| PLUS expr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_POS; $$->addChild($2);}
+| MINUS expr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_NAG; $$->addChild($2);}
+| NOT cond {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_NOT; $$->addChild($2);}
+| pIdentifier INC {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_INC; $$->addChild($1);}
+| pIdentifier DEC {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_DEC; $$->addChild($1);}
 ;
 
 // 基本表达式
 primaryExpr
 : LPAREN expr RPAREN {$$ = $2;}
-| compIdentifier {$$ = $1;}
-| INTEGER {$$ = $1;}
-| BOOL {$$ = $1;}
-| CHAR {$$ = $1;}
-| STRING {$$ = $1;}
+| pIdentifier LPAREN funcRParams RPAREN {
+	$$ = new TreeNode(lineno, NODE_STMT);
+	$$->stype = STMT_FUNCALL;
+	$$->addChild($1);
+	$$->addChild($3);
+	#ifdef FUNCALL_DEBUG
+		cout << "$ reduce function call at scope : " << presentScope << ", at line " << lineno << endl;
+	#endif
+  }
+| pIdentifier LPAREN RPAREN {
+	$$ = new TreeNode(lineno, NODE_STMT);
+	$$->stype = STMT_FUNCALL;
+	$$->addChild($1);
+	#ifdef FUNCALL_DEBUG
+		cout << "$ reduce function call at scope : " << presentScope << ", at line " << lineno << endl;
+	#endif
+  }
+| compIdentifier {$$ = new TreeNode(lineno, NODE_EXPR); $$->addChild($1);}
+| INTEGER {$$ = new TreeNode(lineno, NODE_EXPR); $$->addChild($1);}
+| BOOL {$$ = new TreeNode(lineno, NODE_EXPR); $$->addChild($1);}
+| CHAR {$$ = new TreeNode(lineno, NODE_EXPR); $$->addChild($1);}
+| STRING {$$ = new TreeNode(lineno, NODE_EXPR); $$->addChild($1);}
 ;
 
 // 函数实参列表
 funcRParams
-: expr {$$ = $1;}
-| funcRParams COMMA expr {$$ = $1; $$->addSibling($3);}
+: expr {$$ = new TreeNode(lineno, NODE_VARLIST); $$->addChild($1);}
+| funcRParams COMMA expr {$$ = $1; $$->addChild($3);}
 ;
 
 // 或表达式
