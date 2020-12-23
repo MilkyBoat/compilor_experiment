@@ -27,14 +27,14 @@ run: lex yacc main
 clean:
 	rm -f src/*.output src/main.l.yy.cpp src/main.tab.cpp src/main.tab.h src/main.output src/pch.h.gch $(TARGET) *.o ./bin/* 
 
-test: 
+test: lex yacc main
 	./bin/main tests/test.c > result.txt
 
-1:
+1: lex yacc main
 	./bin/main tests/1.c > result.txt
 
-2:
+2: lex yacc main
 	./bin/main tests/2.c > result.txt
 
-3:
+3: lex yacc main
 	./bin/main tests/3.c > result.txt

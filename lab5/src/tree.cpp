@@ -88,12 +88,9 @@ void TreeNode::printSpecialInfo() {
             cout << ",\tname: ";
             if (this->pointLevel != 0) {
                 // 为指针类型添加前缀(*和&)
-                string t = "";
-                string prefix = "*";
-                if (this->pointLevel < 0)
-                    prefix = "&";
+                string prefix = this->pointLevel > 0 ? "*" : "&";
                 for (int i=0; i < abs(this->pointLevel); i++)
-                    t += prefix;
+                    cout << prefix;
             }
             cout << var_name << ",\tscope: ";
             for (unsigned int i = 0; i < var_scope.length(); i++)

@@ -2,6 +2,7 @@
 I'm level 1 test.
 */
 void main() {
+    int *e;
     int a, s;
     a = 10;
     s = 0;

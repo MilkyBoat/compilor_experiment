@@ -6,14 +6,20 @@
 	extern int lineno;
 
 	// max_scope_id 是堆栈下一层结点的最大编号
-	extern unsigned char max_scope_id;
-	extern string presentScope;
-	extern unsigned int top;
+	unsigned char max_scope_id = SCOPT_ID_BASE;
+	string presentScope = "1";
+	unsigned int top = 0;
 
 	// multimap <标识符名称， 作用域> 变量名列表
-	extern multimap<string, string> idNameList;
+	multimap<string, string> idNameList = {
+		{"scanf", "1"},
+		{"printf", "1"}
+	};
 	// map <<标识符名称， 作用域>, 结点指针> 变量列表
-	extern map<pair<string, string>, TreeNode*> idList;
+	map<pair<string, string>, TreeNode*> idList = {
+		{make_pair("scanf", "1"), nodeScanf},
+		{make_pair("printf", "1"), nodePrintf}
+	};
 
 	int yylex();
 	int yyerror( char const * );
@@ -35,7 +41,7 @@
 %token SEMICOLON COMMA LPAREN RPAREN LBRACE RBRACE LBRACKET RBRACKET
 
 // 关键字
-%token CONST IF ELSE WHILE FOR BREAK CONTINUE RETURN
+%token CONST IF_ ELSE WHILE_ FOR_ BREAK CONTINUE RETURN
 
 // 比较运算符
 %token EQ GRAEQ LESEQ NEQ  GRA LES
@@ -138,13 +144,13 @@ declCompIdentifier
 
 pDeclIdentifier
 : declIdentifier {$$ = new TreeNode($1);}
-| MUL pIdentifier {$$ = $1; $$->pointLevel++;}
-| ADDR pIdentifier {$$ = $1; $$->pointLevel--;}
+| MUL pDeclIdentifier {$$ = $2; $$->pointLevel++;}
+| ADDR pDeclIdentifier {$$ = $2; $$->pointLevel--;}
 ;
 
 // 常量数组标识符（仅供声明使用）
 constArrayIdentifier
-: pIdentifier LBRACKET INTEGER RBRACKET {
+: pDeclIdentifier LBRACKET INTEGER RBRACKET {
   $$ = $1;
   $$->type = new Type(VALUE_ARRAY);
   $$->type->elementType = $1->type->type;
@@ -163,14 +169,14 @@ declIdentifier
 	$$ = $1;
 	$$->var_scope = presentScope;
 	#ifdef ID_REDUCE_DEBUG
-		cout<<"$ reduce declIdentifier : "<<$1->var_name<<", at scope :"<<presentScope<<endl;
+		cout<<"$ reduce declIdentifier : "<<$$->var_name<<", at scope :"<<presentScope<<endl;
 	#endif
-	if (idList.count(make_pair($1->var_name, $1->var_scope)) != 0) {
-		string t = "Redeclared identifier : " + $1->var_name;
+	if (idList.count(make_pair($$->var_name, $$->var_scope)) != 0) {
+		string t = "Redeclared identifier : " + $$->var_name;
 		yyerror(t.c_str());
 	}
-	idNameList.insert(make_pair($1->var_name, $1->var_scope));
-	idList[make_pair($1->var_name, $1->var_scope)] = $1;
+	idNameList.insert(make_pair($$->var_name, $$->var_scope));
+	idList[make_pair($$->var_name, $$->var_scope)] = $$;
 }
 ;
 
@@ -242,7 +248,7 @@ varDef
 // ---------------- 函数声明 -------------------
 
 funcDef
-: basicType pDeclIdentifier funcLPAREN funcFParams RPAREN block {
+: basicType pDeclIdentifier funcLPAREN funcFParams RPAREN LBRACE blockItems RBRACE {
 	$$ = new TreeNode(lineno, NODE_STMT);
 	$$->stype = STMT_DECL;
 	$$->addChild($1);
@@ -250,16 +256,22 @@ funcDef
 	TreeNode* params = new TreeNode(lineno, NODE_VARLIST);
 	params->addChild($4);
 	$$->addChild(params);
-	$$->addChild($6);
+	TreeNode* funcBlock = new TreeNode(lineno, NODE_STMT);
+	funcBlock->stype = STMT_BLOCK;
+	funcBlock->addChild($7);
+	$$->addChild(funcBlock);
 	scopePop();
   }
-| basicType pDeclIdentifier funcLPAREN RPAREN block {
+| basicType pDeclIdentifier funcLPAREN RPAREN LBRACE blockItems RBRACE {
 	$$ = new TreeNode(lineno, NODE_STMT);
 	$$->stype = STMT_DECL;
 	$$->addChild($1);
 	$$->addChild($2);
 	$$->addChild(new TreeNode(lineno, NODE_VARLIST));
-	$$->addChild($5);
+	TreeNode* funcBlock = new TreeNode(lineno, NODE_STMT);
+	funcBlock->stype = STMT_BLOCK;
+	funcBlock->addChild($6);
+	$$->addChild(funcBlock);
 	scopePop();
   }
 ;
@@ -267,8 +279,8 @@ funcDef
 funcLPAREN : LPAREN {scopePush();};
 
 funcFParams
-: funcFParam {$$ = new TreeNode(lineno, NODE_VARLIST); $$->addChild($1);}
-| funcFParams COMMA funcFParam {$$ = $1; $$->addChild($3);}
+: funcFParam {$$ = $1;}
+| funcFParams COMMA funcFParam {$$ = $1; $$->addSibling($3);}
 ;
 
 funcFParam
@@ -278,11 +290,14 @@ funcFParam
 // ---------------- 语句块 -------------------
 
 block
-: LBRACE blockItems RBRACE {
+: blockLBRACE blockItems blockRBRACE {
 	$$ = new TreeNode(lineno, NODE_STMT);
 	$$->stype = STMT_BLOCK;
 	$$->addChild($2);
 };
+
+blockLBRACE : LBRACE {scopePush();}
+blockRBRACE : RBRACE {scopePop();}
 
 blockItems
 : blockItem {$$ = $1;}
@@ -294,10 +309,19 @@ blockItem
 | stmt {$$ = $1;}
 ;
 
+stmt_
+: LBRACE blockItems RBRACE {
+	$$ = new TreeNode(lineno, NODE_STMT);
+	$$->stype = STMT_BLOCK;
+	$$->addChild($2);
+  }
+| stmt {$$ = $1;}
+;
+
 stmt
 : SEMICOLON {$$ = new TreeNode(lineno, NODE_STMT); $$->stype = STMT_SKIP;}
-| block {$$ = $1;}
 | expr SEMICOLON {$$ = $1;}
+| block {$$ = $1;}
 | compIdentifier ASSIGN expr SEMICOLON {
 	$$ = new TreeNode(lineno, NODE_OP);
 	$$->optype = OP_ASSIGN;
@@ -332,7 +356,7 @@ stmt
 	$$->addChild($3);
   }
 
-| IF LPAREN cond RPAREN stmt ELSE stmt {
+| IF LPAREN cond RPAREN stmt_ ELSE stmt_ {
 	$$ = new TreeNode(lineno, NODE_STMT);
 	$$->stype = STMT_IFELSE;
 	$$->addChild($3);
@@ -343,7 +367,7 @@ stmt
 		cout << "$ reduce IF-ELSE at scope : " << presentScope << ", at line " << lineno << endl;
 	#endif
   }
-| IF LPAREN cond RPAREN stmt {
+| IF LPAREN cond RPAREN stmt_ {
 	$$ = new TreeNode(lineno, NODE_STMT);
 	$$->stype = STMT_IF;
 	$$->addChild($3);
@@ -353,7 +377,7 @@ stmt
 		cout << "$ reduce IF at scope : " << presentScope << ", at line " << lineno << endl;
 	#endif
   }
-| WHILE LPAREN cond RPAREN stmt {
+| WHILE LPAREN cond RPAREN stmt_ {
 	$$ = new TreeNode(lineno, NODE_STMT);
 	$$->stype = STMT_WHILE;
 	$$->addChild($3);
@@ -363,7 +387,7 @@ stmt
 		cout << "$ reduce WHILE at scope : " << presentScope << ", at line " << lineno << endl;
 	#endif
   }
-| FOR LPAREN basicType varDefs SEMICOLON cond SEMICOLON expr RPAREN stmt {
+| FOR LPAREN basicType varDefs SEMICOLON cond SEMICOLON expr RPAREN stmt_ {
 	$$ = new TreeNode(lineno, NODE_STMT);
 	$$->stype = STMT_FOR;
 	TreeNode* forDecl = new TreeNode(lineno, NODE_STMT);
@@ -376,7 +400,7 @@ stmt
 	$$->addChild($10);
 	scopePop();
   }
-| FOR LPAREN expr SEMICOLON cond SEMICOLON expr RPAREN stmt {
+| FOR LPAREN expr SEMICOLON cond SEMICOLON expr RPAREN stmt_ {
 	$$ = new TreeNode(lineno, NODE_STMT);
 	$$->stype = STMT_FOR;
 	$$->addChild($3);
@@ -392,6 +416,9 @@ stmt
 | RETURN expr SEMICOLON {$$ = new TreeNode(lineno, NODE_STMT); $$->stype = STMT_RETURN; $$->addChild($2);}
 ;
 
+IF : IF_ {scopePush();};
+WHILE : WHILE_ {scopePush();};
+FOR : FOR_ {scopePush();};
 
 // ---------------- 表达式 -------------------
 
@@ -494,4 +521,52 @@ int yyerror(char const * message)
 {
 	cout << "error: " << message << ", at line " << lineno << endl;
 	return -1;
+}
+
+/*
+ *	作用域比较函数 int scopeCmp (string, string)
+ *
+ *  输入参数： 
+ *    presScope： 当前变量所处的作用域
+ *    varScope:   希望进行比较的已声明变量作用域
+ *
+ *  返回值：
+ *    0： 作用域相同，
+ *          若为变量声明语句，为变量重定义。
+ *   >0： 已声明变量作用域在当前作用域外层，返回作用域距离（堆栈层数）
+ *          若为声明语句，不产生冲突，当前变量为新定义变量，
+ *          若为使用语句，当前变量为新定义变量。
+ *   -1：已声明变量作用域在当前作用域内层，
+ *          若为声明语句，不可能出现这种情况，
+ *          若为使用语句，不产生冲突。
+ *   -2：两个作用域互不包含，任何情况下都不会互相干扰
+ */
+int scopeCmp(string presScope, string varScope) {
+	unsigned int plen = presScope.length(), vlen = varScope.length();
+	unsigned int minlen = min(plen, vlen);
+	if (presScope.substr(0, minlen) == varScope.substr(0, minlen)) {
+		if (plen >= vlen)
+			return plen - vlen;
+		else
+			return -1;
+	}
+	return -2;
+}
+
+void scopePush() {
+	presentScope += max_scope_id;
+	max_scope_id = SCOPT_ID_BASE;
+	top++;
+#ifdef SCOPE_DEBUG
+	cout << "* push -> " << presentScope << ", at line " << lineno << endl;
+#endif
+}
+
+void scopePop() {
+	max_scope_id = presentScope[top] + 1;
+	presentScope = presentScope.substr(0, presentScope.length() - 1);
+	top--;
+#ifdef SCOPE_DEBUG
+	cout << "* pop -> " << presentScope << ", at line " << lineno << endl;
+#endif
 }

@@ -10,15 +10,16 @@ using namespace std;
 
 // #define DEBUG
 #ifdef DEBUG
-#define SCOPE_DEBUG
-#define ID_TOKEN_DEBUG
+// #define SCOPE_DEBUG
+// #define ID_TOKEN_DEBUG
 #define ID_REDUCE_DEBUG
-#define POINT_DEBUG
-#define ASSIGN_DEBUG
-#define IF_DEBUG
-#define IFELSE_DEBUG
-#define WHILE_DEBUG
-#define FUNCALL_DEBUG
+#define DECL_DEBUG
+// #define POINT_DEBUG
+// #define ASSIGN_DEBUG
+// #define IF_DEBUG
+// #define IFELSE_DEBUG
+// #define WHILE_DEBUG
+// #define FUNCALL_DEBUG
 #endif
 
 enum ValueType

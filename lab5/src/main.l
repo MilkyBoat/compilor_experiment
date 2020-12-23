@@ -5,70 +5,6 @@
 
 int lineno = 1;
 
-// max_scope_id 是堆栈下一层结点的最大编号
-unsigned char max_scope_id = SCOPT_ID_BASE;
-string presentScope = "1";
-unsigned int top = 0;
-
-// multimap <标识符名称， 作用域> 变量名列表
-multimap<string, string> idNameList = {
-    {"scanf", "1"},
-    {"printf", "1"}
-};
-// map <<标识符名称， 作用域>, 结点指针> 变量列表
-map<pair<string, string>, TreeNode*> idList = {
-    {make_pair("scanf", "1"), nodeScanf},
-    {make_pair("printf", "1"), nodePrintf}
-};
-
-/*
- *	作用域比较函数 int scopeCmp (string, string)
- *
- *  输入参数： 
- *    presScope： 当前变量所处的作用域
- *    varScope:   希望进行比较的已声明变量作用域
- *
- *  返回值：
- *    0： 作用域相同，
- *          若为变量声明语句，为变量重定义。
- *   >0： 已声明变量作用域在当前作用域外层，返回作用域距离（堆栈层数）
- *          若为声明语句，不产生冲突，当前变量为新定义变量，
- *          若为使用语句，当前变量为新定义变量。
- *   -1：已声明变量作用域在当前作用域内层，
- *          若为声明语句，不可能出现这种情况，
- *          若为使用语句，不产生冲突。
- *   -2：两个作用域互不包含，任何情况下都不会互相干扰
- */
-int scopeCmp(string presScope, string varScope) {
-	unsigned int plen = presScope.length(), vlen = varScope.length();
-	unsigned int minlen = min(plen, vlen);
-	if (presScope.substr(0, minlen) == varScope.substr(0, minlen)) {
-		if (plen >= vlen)
-			return plen - vlen;
-		else
-			return -1;
-	}
-	return -2;
-}
-
-void scopePush() {
-	presentScope += max_scope_id;
-	max_scope_id = SCOPT_ID_BASE;
-	top++;
-#ifdef SCOPE_DEBUG
-	cout << "* push -> " << presentScope << ", at line " << lineno << endl;
-#endif
-}
-
-void scopePop() {
-	max_scope_id = presentScope[top] + 1;
-	presentScope = presentScope.substr(0, presentScope.length() - 1);
-	top--;
-#ifdef SCOPE_DEBUG
-	cout << "* pop -> " << presentScope << ", at line " << lineno << endl;
-#endif
-}
-
 %}
 
 BLOCKCOMMENT_BEGIN "/*"
@@ -109,8 +45,8 @@ IDENTIFIER [[:alpha:]_][[:alpha:][:digit:]_]*
 ")" return RPAREN;
 "[" return LBRACKET;
 "]" return RBRACKET;
-"{" {scopePush(); return LBRACE;}
-"}" {scopePop(); return RBRACE;}
+"{" return LBRACE;
+"}" return RBRACE;
 "," return COMMA;
 ";" return SEMICOLON;
 
@@ -137,10 +73,10 @@ IDENTIFIER [[:alpha:]_][[:alpha:][:digit:]_]*
 "!" return NOT;
 
 "const" return CONST;
-"if" {scopePush(); return IF;}
+"if" return IF_;
 "else" return ELSE;
-"while" {scopePush(); return WHILE;}
-"for" {scopePush(); return FOR;}
+"while" return WHILE_;
+"for" return FOR_;
 "break" return BREAK;
 "continue" return CONTINUE;
 "return" return RETURN;
@@ -253,13 +189,11 @@ IDENTIFIER [[:alpha:]_][[:alpha:][:digit:]_]*
  * 	可得作用域推进表：
  *
  *		push:
- *			{
  *			IF
  *			WHILE
  *			FOR
  *			funcLPAREN
  *		pop:
- *			}
  *			ifStmt(代码段尾部)
  *			whileStmt(代码段尾部)
  *			forStmt(代码段尾部)
