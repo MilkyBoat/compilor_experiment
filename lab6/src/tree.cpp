@@ -1,4 +1,4 @@
-#include "tree.hpp"
+#include "tree.h"
 using namespace std;
 
 TreeNode::TreeNode(int lineno, NodeType type) {

@@ -1,5 +1,5 @@
 %{
-	#include "common.hpp"
+	#include "common.h"
 	#define YYSTYPE TreeNode *
 
 	TreeNode* root = new TreeNode(0, NODE_PROG);

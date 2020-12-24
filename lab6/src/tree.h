@@ -1,8 +1,8 @@
 #ifndef TREE_H
 #define TREE_H
 
-#include "pch.hpp"
-#include "type.hpp"
+#include "pch.h"
+#include "type.h"
 
 enum NodeType
 {

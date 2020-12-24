@@ -64,7 +64,7 @@
 /* Copy the first part of user declarations.  */
 #line 1 "src/parser.y" /* yacc.c:339  */
 
-	#include "common.hpp"
+	#include "common.h"
 	#define YYSTYPE TreeNode *
 
 	TreeNode* root = new TreeNode(0, NODE_PROG);
@@ -111,7 +111,7 @@
 #endif
 
 /* In a future release of Bison, this section will be replaced
-   by #include "parser.hpp".  */
+   by #include "parser.h".  */
 #ifndef YY_YY_SRC_PARSER_HPP_INCLUDED
 # define YY_YY_SRC_PARSER_HPP_INCLUDED
 /* Debug traces.  */

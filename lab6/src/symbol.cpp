@@ -3,8 +3,8 @@
 
 using namespace std;
 
-#include "symbol.hpp"
-#include "tree.hpp"
+#include "symbol.h"
+#include "tree.h"
 
 symbol_table symtbl;
 

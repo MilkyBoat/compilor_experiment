@@ -1,7 +1,7 @@
 %option nounput
 %{
-#include "common.hpp"
-#include "parser.hpp"  // yacc header
+#include "common.h"
+#include "parser.h"  // yacc header
 
 int lineno = 1;
 

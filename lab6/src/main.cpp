@@ -1,4 +1,4 @@
-#include "common.hpp"
+#include "common.h"
 #include <fstream>
 
 extern TreeNode *root;

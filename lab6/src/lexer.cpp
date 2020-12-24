@@ -533,8 +533,8 @@ int yy_flex_debug = 0;
 char *yytext;
 #line 1 "src/lexer.l"
 #line 3 "src/lexer.l"
-#include "common.hpp"
-#include "parser.hpp"  // yacc header
+#include "common.h"
+#include "parser.h"  // yacc header
 
 int lineno = 1;
 

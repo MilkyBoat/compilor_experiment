@@ -1,7 +1,7 @@
 #ifndef COMMON_H
 #define COMMON_H
 
-#include "pch.hpp"
+#include "pch.h"
 using std::cerr;
 using std::cout;
 using std::endl;
@@ -12,7 +12,7 @@ using std::stack;
 using std::unordered_map;
 #define YYSTYPE TreeNode *
 
-#include "./tree.hpp"
-#include "./parser.hpp"
+#include "./tree.h"
+#include "./parser.h"
 
 #endif
