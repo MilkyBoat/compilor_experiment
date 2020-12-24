@@ -1,0 +1,18 @@
+#vscode
+.vscode
+
+# example
+*.zip
+*.mp4
+lab6_example
+lab6_test
+
+# test output
+test/*/*.out
+test/*/*.output
+test/*/*.s
+test/*/*.sy
+test/*/*.res
+
+# log
+*.log
