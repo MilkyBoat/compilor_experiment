@@ -11,11 +11,13 @@ lab6_example
 lab6_test
 
 # test output
+main.out
 test/*/*.out
 test/*/*.output
 test/*/*.s
 test/*/*.sy
 test/*/*.res
+asmTest*
 
 # log
 *.log

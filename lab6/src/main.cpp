@@ -22,8 +22,6 @@ int main(int argc, char *argv[]) {
     InitIOFunctionNode();
     yyparse();
 
-    if (root == NULL)
-        return 0;
     if (parserError)
         return 0;
         
