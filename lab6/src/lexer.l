@@ -1,7 +1,6 @@
 %option nounput
 %{
 #include "common.h"
-#include "parser.h"  // yacc header
 
 int lineno = 1;
 
@@ -161,41 +160,3 @@ IDENTIFIER [[:alpha:]_][[:alpha:][:digit:]_]*
     cerr << "[line "<< lineno <<" ] unknown character:" << yytext << endl;
 }
 %%
-
-/*
- *	变量作用域切换只会发生在以下地方：
- *
- *		函数体		type funcName ( params ) block
- *								  ↑ push		  ↑ pop
- *
- *		block块		{ stmts }
- *					↑ push	↑ pop
- *
- *		if语句		IF ( cond ) block
- *					↑ push			  ↑ pop
- *
- *					IF ( cond ) block ELSE block
- *					↑ push						 ↑ pop
- *
- *		while语句	WHILE ( cond ) block
- *					↑ push				 ↑ pop
- *
- *		for语句		FOR ( expr ; cond ; expr ) block
- *					↑ push							 ↑ pop
- *
- *					FOR ( decl ; cond ; expr ) block
- *					↑ push							 ↑ pop
- *
- * 	可得作用域推进表：
- *
- *		push:
- *			IF
- *			WHILE
- *			FOR
- *			funcLPAREN
- *		pop:
- *			ifStmt(代码段尾部)
- *			whileStmt(代码段尾部)
- *			forStmt(代码段尾部)
- *			funcDef(代码段尾部)
- */

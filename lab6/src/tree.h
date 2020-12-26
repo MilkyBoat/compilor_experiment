@@ -7,7 +7,6 @@
 enum NodeType
 {
 	NODE_OP,
-	NODE_BOOL,
 	NODE_CONST, 
 	NODE_VAR,
 	NODE_TYPE,
@@ -29,6 +28,7 @@ enum OperatorType
 	OP_SUBASSIGN,	// -=
 	OP_MULASSIGN,	// *=
 	OP_DIVASSIGN,	// /=
+	OP_DECLASSIGN,	// = (仅在常变量声明赋值时使用)
 	OP_ASSIGN,	// =
 	OP_GRA,		// >
 	OP_LES,		// <
@@ -52,6 +52,7 @@ enum StmtType {
 	STMT_BLOCK,
 	STMT_DECL,
 	STMT_CONSTDECL,
+	STMT_FUNCDECL,
 	STMT_FUNCALL,
 	STMT_IFELSE,
 	STMT_IF,
@@ -62,32 +63,25 @@ enum StmtType {
 	STMT_BREAK,
 };
 
+struct Label {
+	string true_label;
+	string false_label;
+	string begin_label;
+	string next_label;
+};
+
 struct TreeNode {
 public:
-	int nodeID;
 	int lineno;
-	NodeType nodeType;
+
+	// -------------- 语法树构造 ----------------
 
 	TreeNode* child = nullptr;
 	TreeNode* sibling = nullptr;
 
-	TreeNode(int lineno, NodeType type);
-	TreeNode(TreeNode* node);	// 仅用于叶节点拷贝，函数不复制子节点，也不复制子节点指针
-	void addChild(TreeNode*);
-	void addSibling(TreeNode*);
-
-	void printNodeInfo();
-	void printChildrenId();
-
-	void printAST();	// 先输出自己 + 孩子们的id；再依次让每个孩子输出AST。
-	void printSpecialInfo();
-	void printConstVal();
-
-	void genNodeId();
-
-public:
-	OperatorType optype;
-	StmtType stype;		// 如果是表达式
+	NodeType nodeType;
+	OperatorType optype;// 运算符类型
+	StmtType stype;		// 表达式类型
 	Type* type;			// 变量、类型、表达式结点，有类型。
 	int int_val;
 	char ch_val;
@@ -96,6 +90,42 @@ public:
 	string var_name;
 	string var_scope;	// 变量作用域标识符
     int pointLevel;
+
+	TreeNode(int lineno, NodeType type);
+	TreeNode(TreeNode* node);	// 仅用于叶节点拷贝，函数不复制子节点，也不复制子节点指针
+	void addChild(TreeNode*);
+	void addSibling(TreeNode*);
+	int getChildNum();
+
+	int nodeID;
+	void genNodeId();
+
+	// -------------- 输出语法树 ----------------
+
+	void printAST();
+	void printNodeInfo();
+	void printChildrenId();
+	void printSpecialInfo();
+	void printConstVal();
+
+	// -------------- 类型检查 ----------------
+
+	void typeCheck();
+
+	// ------------- asm 代码生成 -------------
+
+	int node_seq = 0;
+	int temp_var_seq = 0;
+	int label_seq = 0;
+	Label label;
+
+	void gen_header();
+	void gen_var_decl();
+	void get_temp_var();
+
+	void get_label();
+
+	void genCode();
 	
 public:
 	static string nodeType2String (NodeType type);
@@ -103,7 +133,10 @@ public:
 	static string sType2String (StmtType type);
 };
 
-static TreeNode* nodeScanf = new TreeNode(0, NODE_VAR);
+void InitIOFunctionNode();
+static TreeNode *nodeScanf = new TreeNode(0, NODE_VAR);
 static TreeNode* nodePrintf = new TreeNode(0, NODE_VAR);
+
+extern bool typeError;
 
 #endif

@@ -3,6 +3,8 @@
 Type::Type(ValueType valueType) {
     this->type = valueType;
     this->paramNum = 0;
+    constvar = false;
+    this->retType = nullptr;
     this->dim = 0;
 }
 
@@ -31,6 +33,8 @@ string Type::getTypeInfo(ValueType type) {
             return "";
         case VALUE_VOID:
             return "void";
+        case NOTYPE:
+            return "no type";
         default:
             return "?";
     }

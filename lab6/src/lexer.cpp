@@ -534,13 +534,12 @@ char *yytext;
 #line 1 "src/lexer.l"
 #line 3 "src/lexer.l"
 #include "common.h"
-#include "parser.h"  // yacc header
 
 int lineno = 1;
 
-#line 542 "src/lexer.cpp"
+#line 541 "src/lexer.cpp"
 
-#line 544 "src/lexer.cpp"
+#line 543 "src/lexer.cpp"
 
 #define INITIAL 0
 #define BLOCKCOMMENT 1
@@ -756,10 +755,10 @@ YY_DECL
 		}
 
 	{
-#line 29 "src/lexer.l"
+#line 28 "src/lexer.l"
 
 
-#line 763 "src/lexer.cpp"
+#line 762 "src/lexer.cpp"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -818,243 +817,243 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 31 "src/lexer.l"
+#line 30 "src/lexer.l"
 {BEGIN BLOCKCOMMENT;}
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 32 "src/lexer.l"
+#line 31 "src/lexer.l"
 {}
 	YY_BREAK
 case 3:
 /* rule 3 can match eol */
 YY_RULE_SETUP
-#line 33 "src/lexer.l"
+#line 32 "src/lexer.l"
 {lineno++;}
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 34 "src/lexer.l"
+#line 33 "src/lexer.l"
 {BEGIN INITIAL;}
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 35 "src/lexer.l"
+#line 34 "src/lexer.l"
 {}
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 37 "src/lexer.l"
+#line 36 "src/lexer.l"
 return T_INT;
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 38 "src/lexer.l"
+#line 37 "src/lexer.l"
 return T_BOOL;
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 39 "src/lexer.l"
+#line 38 "src/lexer.l"
 return T_CHAR;
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 40 "src/lexer.l"
+#line 39 "src/lexer.l"
 return T_VOID;
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 42 "src/lexer.l"
+#line 41 "src/lexer.l"
 return ADDR;
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 44 "src/lexer.l"
+#line 43 "src/lexer.l"
 return LPAREN;
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 45 "src/lexer.l"
+#line 44 "src/lexer.l"
 return RPAREN;
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 46 "src/lexer.l"
+#line 45 "src/lexer.l"
 return LBRACKET;
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 47 "src/lexer.l"
+#line 46 "src/lexer.l"
 return RBRACKET;
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 48 "src/lexer.l"
+#line 47 "src/lexer.l"
 return LBRACE;
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 49 "src/lexer.l"
+#line 48 "src/lexer.l"
 return RBRACE;
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 50 "src/lexer.l"
+#line 49 "src/lexer.l"
 return COMMA;
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 51 "src/lexer.l"
+#line 50 "src/lexer.l"
 return SEMICOLON;
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 53 "src/lexer.l"
+#line 52 "src/lexer.l"
 return EQ;
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 54 "src/lexer.l"
+#line 53 "src/lexer.l"
 return GRAEQ;
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 55 "src/lexer.l"
+#line 54 "src/lexer.l"
 return LESEQ;
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 56 "src/lexer.l"
+#line 55 "src/lexer.l"
 return NEQ;
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 57 "src/lexer.l"
+#line 56 "src/lexer.l"
 return ASSIGN;
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 58 "src/lexer.l"
+#line 57 "src/lexer.l"
 return PLUSASSIGN;
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 59 "src/lexer.l"
+#line 58 "src/lexer.l"
 return MINUSASSIGN;
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 60 "src/lexer.l"
+#line 59 "src/lexer.l"
 return MULASSIGN;
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 61 "src/lexer.l"
+#line 60 "src/lexer.l"
 return DIVASSIGN;
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
-#line 62 "src/lexer.l"
+#line 61 "src/lexer.l"
 return INC;
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
-#line 63 "src/lexer.l"
+#line 62 "src/lexer.l"
 return DEC;
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
-#line 64 "src/lexer.l"
+#line 63 "src/lexer.l"
 return GRA;
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
-#line 65 "src/lexer.l"
+#line 64 "src/lexer.l"
 return LES;
 	YY_BREAK
 case 32:
 YY_RULE_SETUP
-#line 66 "src/lexer.l"
+#line 65 "src/lexer.l"
 return PLUS;
 	YY_BREAK
 case 33:
 YY_RULE_SETUP
-#line 67 "src/lexer.l"
+#line 66 "src/lexer.l"
 return MINUS;
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
-#line 68 "src/lexer.l"
+#line 67 "src/lexer.l"
 return MUL;
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
-#line 69 "src/lexer.l"
+#line 68 "src/lexer.l"
 return DIV;
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
-#line 70 "src/lexer.l"
+#line 69 "src/lexer.l"
 return MOD;
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
-#line 71 "src/lexer.l"
+#line 70 "src/lexer.l"
 return AND;
 	YY_BREAK
 case 38:
 YY_RULE_SETUP
-#line 72 "src/lexer.l"
+#line 71 "src/lexer.l"
 return OR;
 	YY_BREAK
 case 39:
 YY_RULE_SETUP
-#line 73 "src/lexer.l"
+#line 72 "src/lexer.l"
 return NOT;
 	YY_BREAK
 case 40:
 YY_RULE_SETUP
-#line 75 "src/lexer.l"
+#line 74 "src/lexer.l"
 return CONST;
 	YY_BREAK
 case 41:
 YY_RULE_SETUP
-#line 76 "src/lexer.l"
+#line 75 "src/lexer.l"
 return IF_;
 	YY_BREAK
 case 42:
 YY_RULE_SETUP
-#line 77 "src/lexer.l"
+#line 76 "src/lexer.l"
 return ELSE;
 	YY_BREAK
 case 43:
 YY_RULE_SETUP
-#line 78 "src/lexer.l"
+#line 77 "src/lexer.l"
 return WHILE_;
 	YY_BREAK
 case 44:
 YY_RULE_SETUP
-#line 79 "src/lexer.l"
+#line 78 "src/lexer.l"
 return FOR_;
 	YY_BREAK
 case 45:
 YY_RULE_SETUP
-#line 80 "src/lexer.l"
+#line 79 "src/lexer.l"
 return BREAK;
 	YY_BREAK
 case 46:
 YY_RULE_SETUP
-#line 81 "src/lexer.l"
+#line 80 "src/lexer.l"
 return CONTINUE;
 	YY_BREAK
 case 47:
 YY_RULE_SETUP
-#line 82 "src/lexer.l"
+#line 81 "src/lexer.l"
 return RETURN;
 	YY_BREAK
 case 48:
 YY_RULE_SETUP
-#line 84 "src/lexer.l"
+#line 83 "src/lexer.l"
 {
     nodePrintf->var_name = "printf";
     nodePrintf->var_scope = "1";
@@ -1064,7 +1063,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 49:
 YY_RULE_SETUP
-#line 90 "src/lexer.l"
+#line 89 "src/lexer.l"
 {
     nodeScanf->var_name = "scanf";
     nodeScanf->var_scope = "1";
@@ -1074,7 +1073,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 50:
 YY_RULE_SETUP
-#line 97 "src/lexer.l"
+#line 96 "src/lexer.l"
 {
     TreeNode* node = new TreeNode(lineno, NODE_CONST);
     node->type = TYPE_BOOL;
@@ -1085,7 +1084,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 51:
 YY_RULE_SETUP
-#line 105 "src/lexer.l"
+#line 104 "src/lexer.l"
 {
     TreeNode* node = new TreeNode(lineno, NODE_CONST);
     node->type = TYPE_INT;
@@ -1096,7 +1095,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 52:
 YY_RULE_SETUP
-#line 113 "src/lexer.l"
+#line 112 "src/lexer.l"
 {
     TreeNode* node = new TreeNode(lineno, NODE_CONST);
     node->type = TYPE_INT;
@@ -1107,7 +1106,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 53:
 YY_RULE_SETUP
-#line 121 "src/lexer.l"
+#line 120 "src/lexer.l"
 {
     TreeNode* node = new TreeNode(lineno, NODE_CONST);
     node->type = TYPE_INT;
@@ -1118,7 +1117,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 54:
 YY_RULE_SETUP
-#line 129 "src/lexer.l"
+#line 128 "src/lexer.l"
 {
     TreeNode* node = new TreeNode(lineno, NODE_CONST);
     node->type = TYPE_CHAR;
@@ -1130,7 +1129,7 @@ YY_RULE_SETUP
 case 55:
 /* rule 55 can match eol */
 YY_RULE_SETUP
-#line 137 "src/lexer.l"
+#line 136 "src/lexer.l"
 {
     TreeNode* node = new TreeNode(lineno, NODE_CONST);
     node->type = TYPE_STRING;
@@ -1142,7 +1141,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 56:
 YY_RULE_SETUP
-#line 146 "src/lexer.l"
+#line 145 "src/lexer.l"
 {
     TreeNode* node = new TreeNode(lineno, NODE_VAR);
     node->var_name = string(yytext);
@@ -1155,28 +1154,28 @@ YY_RULE_SETUP
 	YY_BREAK
 case 57:
 YY_RULE_SETUP
-#line 156 "src/lexer.l"
+#line 155 "src/lexer.l"
 {}
 	YY_BREAK
 case 58:
 /* rule 58 can match eol */
 YY_RULE_SETUP
-#line 158 "src/lexer.l"
+#line 157 "src/lexer.l"
 {lineno++;}
 	YY_BREAK
 case 59:
 YY_RULE_SETUP
-#line 160 "src/lexer.l"
+#line 159 "src/lexer.l"
 {
     cerr << "[line "<< lineno <<" ] unknown character:" << yytext << endl;
 }
 	YY_BREAK
 case 60:
 YY_RULE_SETUP
-#line 163 "src/lexer.l"
+#line 162 "src/lexer.l"
 ECHO;
 	YY_BREAK
-#line 1180 "src/lexer.cpp"
+#line 1179 "src/lexer.cpp"
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(BLOCKCOMMENT):
 	yyterminate();
@@ -2145,44 +2144,6 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 163 "src/lexer.l"
+#line 162 "src/lexer.l"
 
-
-/*
- *	变量作用域切换只会发生在以下地方：
- *
- *		函数体		type funcName ( params ) block
- *								  ↑ push		  ↑ pop
- *
- *		block块		{ stmts }
- *					↑ push	↑ pop
- *
- *		if语句		IF ( cond ) block
- *					↑ push			  ↑ pop
- *
- *					IF ( cond ) block ELSE block
- *					↑ push						 ↑ pop
- *
- *		while语句	WHILE ( cond ) block
- *					↑ push				 ↑ pop
- *
- *		for语句		FOR ( expr ; cond ; expr ) block
- *					↑ push							 ↑ pop
- *
- *					FOR ( decl ; cond ; expr ) block
- *					↑ push							 ↑ pop
- *
- * 	可得作用域推进表：
- *
- *		push:
- *			IF
- *			WHILE
- *			FOR
- *			funcLPAREN
- *		pop:
- *			ifStmt(代码段尾部)
- *			whileStmt(代码段尾部)
- *			forStmt(代码段尾部)
- *			funcDef(代码段尾部)
- */
 

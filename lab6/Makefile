@@ -41,6 +41,11 @@ noerrlog:
 type:
 	./test.out --type
 
+asm:
+	$(CC) -S asmTest.cpp -o asmTest.s
+	$(CC) asmTest.s -o asmTest.out
+	./asmTest.out
+
 std:
 	for file in $(basename $(shell find test/?/*.c)); \
 	do \
