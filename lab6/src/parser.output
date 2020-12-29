@@ -6,15 +6,14 @@ Terminals unused in grammar
 State 21 conflicts: 1 shift/reduce
 State 60 conflicts: 2 shift/reduce
 State 61 conflicts: 3 shift/reduce
-State 84 conflicts: 1 shift/reduce
-State 85 conflicts: 3 shift/reduce
-State 86 conflicts: 4 shift/reduce
-State 131 conflicts: 3 shift/reduce
-State 132 conflicts: 3 shift/reduce
-State 161 conflicts: 4 shift/reduce
-State 162 conflicts: 4 shift/reduce
-State 198 conflicts: 24 shift/reduce
-State 199 conflicts: 1 shift/reduce
+State 77 conflicts: 1 shift/reduce
+State 80 conflicts: 1 shift/reduce
+State 81 conflicts: 1 shift/reduce
+State 82 conflicts: 6 shift/reduce
+State 134 conflicts: 3 shift/reduce
+State 135 conflicts: 3 shift/reduce
+State 201 conflicts: 24 shift/reduce
+State 202 conflicts: 1 shift/reduce
 
 
 Grammar
@@ -146,36 +145,37 @@ Grammar
    87        | mulExpr MOD unaryExpr
 
    88 unaryExpr: primaryExpr
-   89          | PLUS expr
-   90          | MINUS expr
-   91          | NOT cond
+   89          | NOT cond
+   90          | PLUS primaryExpr
+   91          | MINUS primaryExpr
    92          | pIdentifier INC
    93          | pIdentifier DEC
 
-   94 primaryExpr: LPAREN expr RPAREN
-   95            | pIdentifier LPAREN funcRParams RPAREN
-   96            | pIdentifier LPAREN RPAREN
-   97            | compIdentifier
-   98            | literalConst
+   94 primaryExpr: literalConst
+   95            | LPAREN expr RPAREN
+   96            | LPAREN cond RPAREN
+   97            | pIdentifier LPAREN funcRParams RPAREN
+   98            | pIdentifier LPAREN RPAREN
+   99            | compIdentifier
 
-   99 funcRParams: expr
-  100            | funcRParams COMMA expr
+  100 funcRParams: expr
+  101            | funcRParams COMMA expr
 
-  101 LOrExpr: LAndExpr
-  102        | LAndExpr OR LOrExpr
+  102 LOrExpr: LAndExpr
+  103        | LAndExpr OR LOrExpr
 
-  103 LAndExpr: eqExpr
-  104         | eqExpr AND LAndExpr
+  104 LAndExpr: eqExpr
+  105         | eqExpr AND LAndExpr
 
-  105 eqExpr: relExpr
-  106       | eqExpr EQ relExpr
-  107       | eqExpr NEQ relExpr
+  106 eqExpr: relExpr
+  107       | relExpr EQ eqExpr
+  108       | relExpr NEQ eqExpr
 
-  108 relExpr: expr
-  109        | relExpr GRA expr
-  110        | relExpr LES expr
-  111        | relExpr GRAEQ expr
-  112        | relExpr LESEQ expr
+  109 relExpr: expr
+  110        | relExpr GRA expr
+  111        | relExpr LES expr
+  112        | relExpr GRAEQ expr
+  113        | relExpr LESEQ expr
 
 
 Terminals, with rules where they appear
@@ -194,9 +194,9 @@ MINUSASSIGN (266) 77
 MULASSIGN (267) 78
 DIVASSIGN (268) 79
 SEMICOLON (269) 31 38 59 60 65 66 67 68 69 70
-COMMA (270) 33 37 40 48 100
-LPAREN (271) 46 62 63 64 65 66 94 95 96
-RPAREN (272) 44 45 62 63 64 65 66 94 95 96
+COMMA (270) 33 37 40 48 101
+LPAREN (271) 46 62 63 64 65 66 95 96 97 98
+RPAREN (272) 44 45 62 63 64 65 66 95 96 97 98
 LBRACE (273) 35 43 44 45 51 57
 RBRACE (274) 35 43 44 45 52 57
 LBRACKET (275) 18 19 26 27
@@ -209,20 +209,20 @@ FOR_ (281) 73
 BREAK (282) 67
 CONTINUE (283) 68
 RETURN (284) 69 70
-EQ (285) 106
-GRAEQ (286) 111
-LESEQ (287) 112
-NEQ (288) 107
-GRA (289) 109
-LES (290) 110
-PLUS (291) 82 89
-MINUS (292) 83 90
+EQ (285) 107
+GRAEQ (286) 112
+LESEQ (287) 113
+NEQ (288) 108
+GRA (289) 110
+LES (290) 111
+PLUS (291) 82 90
+MINUS (292) 83 91
 MUL (293) 16 24 85
 DIV (294) 86
 MOD (295) 87
-AND (296) 104
-OR (297) 102
-NOT (298) 91
+AND (296) 105
+OR (297) 103
+NOT (298) 89
 INC (299) 92
 DEC (300) 93
 IDENTIFIER (301) 20 28
@@ -241,11 +241,11 @@ program (52)
 basicType (53)
     on left: 5 6 7 8, on right: 31 38 44 45 49 65
 literalConst (54)
-    on left: 9 10 11 12, on right: 34 36 37 98
+    on left: 9 10 11 12, on right: 34 36 37 94
 compIdentifier (55)
-    on left: 13 14, on right: 75 76 77 78 79 97
+    on left: 13 14, on right: 75 76 77 78 79 99
 pIdentifier (56)
-    on left: 15 16 17, on right: 13 16 17 18 92 93 95 96
+    on left: 15 16 17, on right: 13 16 17 18 92 93 97 98
 arrayIdentifier (57)
     on left: 18 19, on right: 14 19
 identifier (58)
@@ -304,9 +304,9 @@ FOR (84)
     on left: 73, on right: 65 66
 expr (85)
     on left: 74 75 76 77 78 79, on right: 18 19 42 60 65 66 70 75 76
-    77 78 79 89 90 94 99 100 108 109 110 111 112
+    77 78 79 95 100 101 109 110 111 112 113
 cond (86)
-    on left: 80, on right: 62 63 64 65 66 91
+    on left: 80, on right: 62 63 64 65 66 89 96
 addExpr (87)
     on left: 81 82 83, on right: 74 82 83
 mulExpr (88)
@@ -314,18 +314,18 @@ mulExpr (88)
 unaryExpr (89)
     on left: 88 89 90 91 92 93, on right: 84 85 86 87
 primaryExpr (90)
-    on left: 94 95 96 97 98, on right: 88
+    on left: 94 95 96 97 98 99, on right: 88 90 91
 funcRParams (91)
-    on left: 99 100, on right: 95 100
+    on left: 100 101, on right: 97 101
 LOrExpr (92)
-    on left: 101 102, on right: 80 102
+    on left: 102 103, on right: 80 103
 LAndExpr (93)
-    on left: 103 104, on right: 101 102 104
+    on left: 104 105, on right: 102 103 105
 eqExpr (94)
-    on left: 105 106 107, on right: 103 104 106 107
+    on left: 106 107 108, on right: 104 105 107 108
 relExpr (95)
-    on left: 108 109 110 111 112, on right: 105 106 107 109 110 111
-    112
+    on left: 109 110 111 112 113, on right: 106 107 108 110 111 112
+    113
 
 
 State 0
@@ -776,7 +776,8 @@ State 43
 
 State 44
 
-   94 primaryExpr: LPAREN . expr RPAREN
+   95 primaryExpr: LPAREN . expr RPAREN
+   96            | LPAREN . cond RPAREN
 
     ADDR        shift, and go to state 43
     LPAREN      shift, and go to state 44
@@ -796,22 +797,24 @@ State 44
     arrayIdentifier  go to state 57
     identifier       go to state 58
     expr             go to state 77
+    cond             go to state 78
     addExpr          go to state 60
     mulExpr          go to state 61
     unaryExpr        go to state 62
     primaryExpr      go to state 63
+    LOrExpr          go to state 79
+    LAndExpr         go to state 80
+    eqExpr           go to state 81
+    relExpr          go to state 82
 
 
 State 45
 
-   89 unaryExpr: PLUS . expr
+   90 unaryExpr: PLUS . primaryExpr
 
     ADDR        shift, and go to state 43
     LPAREN      shift, and go to state 44
-    PLUS        shift, and go to state 45
-    MINUS       shift, and go to state 46
     MUL         shift, and go to state 47
-    NOT         shift, and go to state 48
     IDENTIFIER  shift, and go to state 49
     INTEGER     shift, and go to state 50
     CHAR        shift, and go to state 51
@@ -819,27 +822,20 @@ State 45
     STRING      shift, and go to state 53
 
     literalConst     go to state 54
-    compIdentifier   go to state 55
-    pIdentifier      go to state 56
+    compIdentifier   go to state 83
+    pIdentifier      go to state 84
     arrayIdentifier  go to state 57
     identifier       go to state 58
-    expr             go to state 78
-    addExpr          go to state 60
-    mulExpr          go to state 61
-    unaryExpr        go to state 62
-    primaryExpr      go to state 63
+    primaryExpr      go to state 85
 
 
 State 46
 
-   90 unaryExpr: MINUS . expr
+   91 unaryExpr: MINUS . primaryExpr
 
     ADDR        shift, and go to state 43
     LPAREN      shift, and go to state 44
-    PLUS        shift, and go to state 45
-    MINUS       shift, and go to state 46
     MUL         shift, and go to state 47
-    NOT         shift, and go to state 48
     IDENTIFIER  shift, and go to state 49
     INTEGER     shift, and go to state 50
     CHAR        shift, and go to state 51
@@ -847,15 +843,11 @@ State 46
     STRING      shift, and go to state 53
 
     literalConst     go to state 54
-    compIdentifier   go to state 55
-    pIdentifier      go to state 56
+    compIdentifier   go to state 83
+    pIdentifier      go to state 84
     arrayIdentifier  go to state 57
     identifier       go to state 58
-    expr             go to state 79
-    addExpr          go to state 60
-    mulExpr          go to state 61
-    unaryExpr        go to state 62
-    primaryExpr      go to state 63
+    primaryExpr      go to state 86
 
 
 State 47
@@ -866,13 +858,13 @@ State 47
     MUL         shift, and go to state 47
     IDENTIFIER  shift, and go to state 49
 
-    pIdentifier  go to state 80
+    pIdentifier  go to state 87
     identifier   go to state 58
 
 
 State 48
 
-   91 unaryExpr: NOT . cond
+   89 unaryExpr: NOT . cond
 
     ADDR        shift, and go to state 43
     LPAREN      shift, and go to state 44
@@ -891,16 +883,16 @@ State 48
     pIdentifier      go to state 56
     arrayIdentifier  go to state 57
     identifier       go to state 58
-    expr             go to state 81
-    cond             go to state 82
+    expr             go to state 88
+    cond             go to state 89
     addExpr          go to state 60
     mulExpr          go to state 61
     unaryExpr        go to state 62
     primaryExpr      go to state 63
-    LOrExpr          go to state 83
-    LAndExpr         go to state 84
-    eqExpr           go to state 85
-    relExpr          go to state 86
+    LOrExpr          go to state 79
+    LAndExpr         go to state 80
+    eqExpr           go to state 81
+    relExpr          go to state 82
 
 
 State 49
@@ -940,9 +932,9 @@ State 53
 
 State 54
 
-   98 primaryExpr: literalConst .
+   94 primaryExpr: literalConst .
 
-    $default  reduce using rule 98 (primaryExpr)
+    $default  reduce using rule 94 (primaryExpr)
 
 
 State 55
@@ -952,15 +944,15 @@ State 55
    77     | compIdentifier . MINUSASSIGN expr
    78     | compIdentifier . MULASSIGN expr
    79     | compIdentifier . DIVASSIGN expr
-   97 primaryExpr: compIdentifier .
+   99 primaryExpr: compIdentifier .
 
-    ASSIGN       shift, and go to state 87
-    PLUSASSIGN   shift, and go to state 88
-    MINUSASSIGN  shift, and go to state 89
-    MULASSIGN    shift, and go to state 90
-    DIVASSIGN    shift, and go to state 91
+    ASSIGN       shift, and go to state 90
+    PLUSASSIGN   shift, and go to state 91
+    MINUSASSIGN  shift, and go to state 92
+    MULASSIGN    shift, and go to state 93
+    DIVASSIGN    shift, and go to state 94
 
-    $default  reduce using rule 97 (primaryExpr)
+    $default  reduce using rule 99 (primaryExpr)
 
 
 State 56
@@ -969,13 +961,13 @@ State 56
    18 arrayIdentifier: pIdentifier . LBRACKET expr RBRACKET
    92 unaryExpr: pIdentifier . INC
    93          | pIdentifier . DEC
-   95 primaryExpr: pIdentifier . LPAREN funcRParams RPAREN
-   96            | pIdentifier . LPAREN RPAREN
+   97 primaryExpr: pIdentifier . LPAREN funcRParams RPAREN
+   98            | pIdentifier . LPAREN RPAREN
 
-    LPAREN    shift, and go to state 92
-    LBRACKET  shift, and go to state 93
-    INC       shift, and go to state 94
-    DEC       shift, and go to state 95
+    LPAREN    shift, and go to state 95
+    LBRACKET  shift, and go to state 96
+    INC       shift, and go to state 97
+    DEC       shift, and go to state 98
 
     $default  reduce using rule 13 (compIdentifier)
 
@@ -985,7 +977,7 @@ State 57
    14 compIdentifier: arrayIdentifier .
    19 arrayIdentifier: arrayIdentifier . LBRACKET expr RBRACKET
 
-    LBRACKET  shift, and go to state 96
+    LBRACKET  shift, and go to state 99
 
     $default  reduce using rule 14 (compIdentifier)
 
@@ -1010,8 +1002,8 @@ State 60
    82 addExpr: addExpr . PLUS mulExpr
    83        | addExpr . MINUS mulExpr
 
-    PLUS   shift, and go to state 97
-    MINUS  shift, and go to state 98
+    PLUS   shift, and go to state 100
+    MINUS  shift, and go to state 101
 
     PLUS      [reduce using rule 74 (expr)]
     MINUS     [reduce using rule 74 (expr)]
@@ -1025,9 +1017,9 @@ State 61
    86        | mulExpr . DIV unaryExpr
    87        | mulExpr . MOD unaryExpr
 
-    MUL  shift, and go to state 99
-    DIV  shift, and go to state 100
-    MOD  shift, and go to state 101
+    MUL  shift, and go to state 102
+    DIV  shift, and go to state 103
+    MOD  shift, and go to state 104
 
     MUL       [reduce using rule 81 (addExpr)]
     DIV       [reduce using rule 81 (addExpr)]
@@ -1053,14 +1045,14 @@ State 64
 
    26 constArrayIdentifier: pDeclIdentifier LBRACKET INTEGER . RBRACKET
 
-    RBRACKET  shift, and go to state 102
+    RBRACKET  shift, and go to state 105
 
 
 State 65
 
    45 funcDef: basicType pDeclIdentifier funcLPAREN RPAREN . LBRACE blockItems RBRACE
 
-    LBRACE  shift, and go to state 103
+    LBRACE  shift, and go to state 106
 
 
 State 66
@@ -1071,7 +1063,7 @@ State 66
     MUL         shift, and go to state 17
     IDENTIFIER  shift, and go to state 18
 
-    pDeclIdentifier  go to state 104
+    pDeclIdentifier  go to state 107
     declIdentifier   go to state 22
 
 
@@ -1080,8 +1072,8 @@ State 67
    44 funcDef: basicType pDeclIdentifier funcLPAREN funcFParams . RPAREN LBRACE blockItems RBRACE
    48 funcFParams: funcFParams . COMMA funcFParam
 
-    COMMA   shift, and go to state 105
-    RPAREN  shift, and go to state 106
+    COMMA   shift, and go to state 108
+    RPAREN  shift, and go to state 109
 
 
 State 68
@@ -1100,15 +1092,15 @@ State 69
     BOOL     shift, and go to state 52
     STRING   shift, and go to state 53
 
-    literalConst  go to state 107
-    ArrayInitVal  go to state 108
+    literalConst  go to state 110
+    ArrayInitVal  go to state 111
 
 
 State 70
 
    27 constArrayIdentifier: constArrayIdentifier LBRACKET INTEGER . RBRACKET
 
-    RBRACKET  shift, and go to state 109
+    RBRACKET  shift, and go to state 112
 
 
 State 71
@@ -1144,8 +1136,8 @@ State 74
     BOOL     shift, and go to state 52
     STRING   shift, and go to state 53
 
-    literalConst  go to state 107
-    ArrayInitVal  go to state 110
+    literalConst  go to state 110
+    ArrayInitVal  go to state 113
 
 
 State 75
@@ -1164,216 +1156,135 @@ State 76
 
 State 77
 
-   94 primaryExpr: LPAREN expr . RPAREN
+   95 primaryExpr: LPAREN expr . RPAREN
+  109 relExpr: expr .
 
-    RPAREN  shift, and go to state 111
+    RPAREN  shift, and go to state 114
+
+    RPAREN    [reduce using rule 109 (relExpr)]
+    $default  reduce using rule 109 (relExpr)
 
 
 State 78
 
-   89 unaryExpr: PLUS expr .
+   96 primaryExpr: LPAREN cond . RPAREN
 
-    $default  reduce using rule 89 (unaryExpr)
+    RPAREN  shift, and go to state 115
 
 
 State 79
-
-   90 unaryExpr: MINUS expr .
-
-    $default  reduce using rule 90 (unaryExpr)
-
-
-State 80
-
-   16 pIdentifier: MUL pIdentifier .
-
-    $default  reduce using rule 16 (pIdentifier)
-
-
-State 81
-
-  108 relExpr: expr .
-
-    $default  reduce using rule 108 (relExpr)
-
-
-State 82
-
-   91 unaryExpr: NOT cond .
-
-    $default  reduce using rule 91 (unaryExpr)
-
-
-State 83
 
    80 cond: LOrExpr .
 
     $default  reduce using rule 80 (cond)
 
 
+State 80
+
+  102 LOrExpr: LAndExpr .
+  103        | LAndExpr . OR LOrExpr
+
+    OR  shift, and go to state 116
+
+    OR        [reduce using rule 102 (LOrExpr)]
+    $default  reduce using rule 102 (LOrExpr)
+
+
+State 81
+
+  104 LAndExpr: eqExpr .
+  105         | eqExpr . AND LAndExpr
+
+    AND  shift, and go to state 117
+
+    AND       [reduce using rule 104 (LAndExpr)]
+    $default  reduce using rule 104 (LAndExpr)
+
+
+State 82
+
+  106 eqExpr: relExpr .
+  107       | relExpr . EQ eqExpr
+  108       | relExpr . NEQ eqExpr
+  110 relExpr: relExpr . GRA expr
+  111        | relExpr . LES expr
+  112        | relExpr . GRAEQ expr
+  113        | relExpr . LESEQ expr
+
+    EQ     shift, and go to state 118
+    GRAEQ  shift, and go to state 119
+    LESEQ  shift, and go to state 120
+    NEQ    shift, and go to state 121
+    GRA    shift, and go to state 122
+    LES    shift, and go to state 123
+
+    EQ        [reduce using rule 106 (eqExpr)]
+    GRAEQ     [reduce using rule 106 (eqExpr)]
+    LESEQ     [reduce using rule 106 (eqExpr)]
+    NEQ       [reduce using rule 106 (eqExpr)]
+    GRA       [reduce using rule 106 (eqExpr)]
+    LES       [reduce using rule 106 (eqExpr)]
+    $default  reduce using rule 106 (eqExpr)
+
+
+State 83
+
+   99 primaryExpr: compIdentifier .
+
+    $default  reduce using rule 99 (primaryExpr)
+
+
 State 84
 
-  101 LOrExpr: LAndExpr .
-  102        | LAndExpr . OR LOrExpr
+   13 compIdentifier: pIdentifier .
+   18 arrayIdentifier: pIdentifier . LBRACKET expr RBRACKET
+   97 primaryExpr: pIdentifier . LPAREN funcRParams RPAREN
+   98            | pIdentifier . LPAREN RPAREN
 
-    OR  shift, and go to state 112
+    LPAREN    shift, and go to state 95
+    LBRACKET  shift, and go to state 96
 
-    OR        [reduce using rule 101 (LOrExpr)]
-    $default  reduce using rule 101 (LOrExpr)
+    $default  reduce using rule 13 (compIdentifier)
 
 
 State 85
 
-  103 LAndExpr: eqExpr .
-  104         | eqExpr . AND LAndExpr
-  106 eqExpr: eqExpr . EQ relExpr
-  107       | eqExpr . NEQ relExpr
+   90 unaryExpr: PLUS primaryExpr .
 
-    EQ   shift, and go to state 113
-    NEQ  shift, and go to state 114
-    AND  shift, and go to state 115
-
-    EQ        [reduce using rule 103 (LAndExpr)]
-    NEQ       [reduce using rule 103 (LAndExpr)]
-    AND       [reduce using rule 103 (LAndExpr)]
-    $default  reduce using rule 103 (LAndExpr)
+    $default  reduce using rule 90 (unaryExpr)
 
 
 State 86
 
-  105 eqExpr: relExpr .
-  109 relExpr: relExpr . GRA expr
-  110        | relExpr . LES expr
-  111        | relExpr . GRAEQ expr
-  112        | relExpr . LESEQ expr
+   91 unaryExpr: MINUS primaryExpr .
 
-    GRAEQ  shift, and go to state 116
-    LESEQ  shift, and go to state 117
-    GRA    shift, and go to state 118
-    LES    shift, and go to state 119
-
-    GRAEQ     [reduce using rule 105 (eqExpr)]
-    LESEQ     [reduce using rule 105 (eqExpr)]
-    GRA       [reduce using rule 105 (eqExpr)]
-    LES       [reduce using rule 105 (eqExpr)]
-    $default  reduce using rule 105 (eqExpr)
+    $default  reduce using rule 91 (unaryExpr)
 
 
 State 87
 
-   75 expr: compIdentifier ASSIGN . expr
+   16 pIdentifier: MUL pIdentifier .
 
-    ADDR        shift, and go to state 43
-    LPAREN      shift, and go to state 44
-    PLUS        shift, and go to state 45
-    MINUS       shift, and go to state 46
-    MUL         shift, and go to state 47
-    NOT         shift, and go to state 48
-    IDENTIFIER  shift, and go to state 49
-    INTEGER     shift, and go to state 50
-    CHAR        shift, and go to state 51
-    BOOL        shift, and go to state 52
-    STRING      shift, and go to state 53
-
-    literalConst     go to state 54
-    compIdentifier   go to state 55
-    pIdentifier      go to state 56
-    arrayIdentifier  go to state 57
-    identifier       go to state 58
-    expr             go to state 120
-    addExpr          go to state 60
-    mulExpr          go to state 61
-    unaryExpr        go to state 62
-    primaryExpr      go to state 63
+    $default  reduce using rule 16 (pIdentifier)
 
 
 State 88
 
-   76 expr: compIdentifier PLUSASSIGN . expr
+  109 relExpr: expr .
 
-    ADDR        shift, and go to state 43
-    LPAREN      shift, and go to state 44
-    PLUS        shift, and go to state 45
-    MINUS       shift, and go to state 46
-    MUL         shift, and go to state 47
-    NOT         shift, and go to state 48
-    IDENTIFIER  shift, and go to state 49
-    INTEGER     shift, and go to state 50
-    CHAR        shift, and go to state 51
-    BOOL        shift, and go to state 52
-    STRING      shift, and go to state 53
-
-    literalConst     go to state 54
-    compIdentifier   go to state 55
-    pIdentifier      go to state 56
-    arrayIdentifier  go to state 57
-    identifier       go to state 58
-    expr             go to state 121
-    addExpr          go to state 60
-    mulExpr          go to state 61
-    unaryExpr        go to state 62
-    primaryExpr      go to state 63
+    $default  reduce using rule 109 (relExpr)
 
 
 State 89
 
-   77 expr: compIdentifier MINUSASSIGN . expr
+   89 unaryExpr: NOT cond .
 
-    ADDR        shift, and go to state 43
-    LPAREN      shift, and go to state 44
-    PLUS        shift, and go to state 45
-    MINUS       shift, and go to state 46
-    MUL         shift, and go to state 47
-    NOT         shift, and go to state 48
-    IDENTIFIER  shift, and go to state 49
-    INTEGER     shift, and go to state 50
-    CHAR        shift, and go to state 51
-    BOOL        shift, and go to state 52
-    STRING      shift, and go to state 53
-
-    literalConst     go to state 54
-    compIdentifier   go to state 55
-    pIdentifier      go to state 56
-    arrayIdentifier  go to state 57
-    identifier       go to state 58
-    expr             go to state 122
-    addExpr          go to state 60
-    mulExpr          go to state 61
-    unaryExpr        go to state 62
-    primaryExpr      go to state 63
+    $default  reduce using rule 89 (unaryExpr)
 
 
 State 90
 
-   78 expr: compIdentifier MULASSIGN . expr
-
-    ADDR        shift, and go to state 43
-    LPAREN      shift, and go to state 44
-    PLUS        shift, and go to state 45
-    MINUS       shift, and go to state 46
-    MUL         shift, and go to state 47
-    NOT         shift, and go to state 48
-    IDENTIFIER  shift, and go to state 49
-    INTEGER     shift, and go to state 50
-    CHAR        shift, and go to state 51
-    BOOL        shift, and go to state 52
-    STRING      shift, and go to state 53
-
-    literalConst     go to state 54
-    compIdentifier   go to state 55
-    pIdentifier      go to state 56
-    arrayIdentifier  go to state 57
-    identifier       go to state 58
-    expr             go to state 123
-    addExpr          go to state 60
-    mulExpr          go to state 61
-    unaryExpr        go to state 62
-    primaryExpr      go to state 63
-
-
-State 91
-
-   79 expr: compIdentifier DIVASSIGN . expr
+   75 expr: compIdentifier ASSIGN . expr
 
     ADDR        shift, and go to state 43
     LPAREN      shift, and go to state 44
@@ -1399,14 +1310,40 @@ State 91
     primaryExpr      go to state 63
 
 
-State 92
+State 91
 
-   95 primaryExpr: pIdentifier LPAREN . funcRParams RPAREN
-   96            | pIdentifier LPAREN . RPAREN
+   76 expr: compIdentifier PLUSASSIGN . expr
 
     ADDR        shift, and go to state 43
     LPAREN      shift, and go to state 44
-    RPAREN      shift, and go to state 125
+    PLUS        shift, and go to state 45
+    MINUS       shift, and go to state 46
+    MUL         shift, and go to state 47
+    NOT         shift, and go to state 48
+    IDENTIFIER  shift, and go to state 49
+    INTEGER     shift, and go to state 50
+    CHAR        shift, and go to state 51
+    BOOL        shift, and go to state 52
+    STRING      shift, and go to state 53
+
+    literalConst     go to state 54
+    compIdentifier   go to state 55
+    pIdentifier      go to state 56
+    arrayIdentifier  go to state 57
+    identifier       go to state 58
+    expr             go to state 125
+    addExpr          go to state 60
+    mulExpr          go to state 61
+    unaryExpr        go to state 62
+    primaryExpr      go to state 63
+
+
+State 92
+
+   77 expr: compIdentifier MINUSASSIGN . expr
+
+    ADDR        shift, and go to state 43
+    LPAREN      shift, and go to state 44
     PLUS        shift, and go to state 45
     MINUS       shift, and go to state 46
     MUL         shift, and go to state 47
@@ -1427,12 +1364,39 @@ State 92
     mulExpr          go to state 61
     unaryExpr        go to state 62
     primaryExpr      go to state 63
-    funcRParams      go to state 127
 
 
 State 93
 
-   18 arrayIdentifier: pIdentifier LBRACKET . expr RBRACKET
+   78 expr: compIdentifier MULASSIGN . expr
+
+    ADDR        shift, and go to state 43
+    LPAREN      shift, and go to state 44
+    PLUS        shift, and go to state 45
+    MINUS       shift, and go to state 46
+    MUL         shift, and go to state 47
+    NOT         shift, and go to state 48
+    IDENTIFIER  shift, and go to state 49
+    INTEGER     shift, and go to state 50
+    CHAR        shift, and go to state 51
+    BOOL        shift, and go to state 52
+    STRING      shift, and go to state 53
+
+    literalConst     go to state 54
+    compIdentifier   go to state 55
+    pIdentifier      go to state 56
+    arrayIdentifier  go to state 57
+    identifier       go to state 58
+    expr             go to state 127
+    addExpr          go to state 60
+    mulExpr          go to state 61
+    unaryExpr        go to state 62
+    primaryExpr      go to state 63
+
+
+State 94
+
+   79 expr: compIdentifier DIVASSIGN . expr
 
     ADDR        shift, and go to state 43
     LPAREN      shift, and go to state 44
@@ -1458,21 +1422,80 @@ State 93
     primaryExpr      go to state 63
 
 
-State 94
+State 95
+
+   97 primaryExpr: pIdentifier LPAREN . funcRParams RPAREN
+   98            | pIdentifier LPAREN . RPAREN
+
+    ADDR        shift, and go to state 43
+    LPAREN      shift, and go to state 44
+    RPAREN      shift, and go to state 129
+    PLUS        shift, and go to state 45
+    MINUS       shift, and go to state 46
+    MUL         shift, and go to state 47
+    NOT         shift, and go to state 48
+    IDENTIFIER  shift, and go to state 49
+    INTEGER     shift, and go to state 50
+    CHAR        shift, and go to state 51
+    BOOL        shift, and go to state 52
+    STRING      shift, and go to state 53
+
+    literalConst     go to state 54
+    compIdentifier   go to state 55
+    pIdentifier      go to state 56
+    arrayIdentifier  go to state 57
+    identifier       go to state 58
+    expr             go to state 130
+    addExpr          go to state 60
+    mulExpr          go to state 61
+    unaryExpr        go to state 62
+    primaryExpr      go to state 63
+    funcRParams      go to state 131
+
+
+State 96
+
+   18 arrayIdentifier: pIdentifier LBRACKET . expr RBRACKET
+
+    ADDR        shift, and go to state 43
+    LPAREN      shift, and go to state 44
+    PLUS        shift, and go to state 45
+    MINUS       shift, and go to state 46
+    MUL         shift, and go to state 47
+    NOT         shift, and go to state 48
+    IDENTIFIER  shift, and go to state 49
+    INTEGER     shift, and go to state 50
+    CHAR        shift, and go to state 51
+    BOOL        shift, and go to state 52
+    STRING      shift, and go to state 53
+
+    literalConst     go to state 54
+    compIdentifier   go to state 55
+    pIdentifier      go to state 56
+    arrayIdentifier  go to state 57
+    identifier       go to state 58
+    expr             go to state 132
+    addExpr          go to state 60
+    mulExpr          go to state 61
+    unaryExpr        go to state 62
+    primaryExpr      go to state 63
+
+
+State 97
 
    92 unaryExpr: pIdentifier INC .
 
     $default  reduce using rule 92 (unaryExpr)
 
 
-State 95
+State 98
 
    93 unaryExpr: pIdentifier DEC .
 
     $default  reduce using rule 93 (unaryExpr)
 
 
-State 96
+State 99
 
    19 arrayIdentifier: arrayIdentifier LBRACKET . expr RBRACKET
 
@@ -1493,14 +1516,14 @@ State 96
     pIdentifier      go to state 56
     arrayIdentifier  go to state 57
     identifier       go to state 58
-    expr             go to state 129
+    expr             go to state 133
     addExpr          go to state 60
     mulExpr          go to state 61
     unaryExpr        go to state 62
     primaryExpr      go to state 63
 
 
-State 97
+State 100
 
    82 addExpr: addExpr PLUS . mulExpr
 
@@ -1517,16 +1540,16 @@ State 97
     STRING      shift, and go to state 53
 
     literalConst     go to state 54
-    compIdentifier   go to state 130
+    compIdentifier   go to state 83
     pIdentifier      go to state 56
     arrayIdentifier  go to state 57
     identifier       go to state 58
-    mulExpr          go to state 131
+    mulExpr          go to state 134
     unaryExpr        go to state 62
     primaryExpr      go to state 63
 
 
-State 98
+State 101
 
    83 addExpr: addExpr MINUS . mulExpr
 
@@ -1543,16 +1566,16 @@ State 98
     STRING      shift, and go to state 53
 
     literalConst     go to state 54
-    compIdentifier   go to state 130
+    compIdentifier   go to state 83
     pIdentifier      go to state 56
     arrayIdentifier  go to state 57
     identifier       go to state 58
-    mulExpr          go to state 132
+    mulExpr          go to state 135
     unaryExpr        go to state 62
     primaryExpr      go to state 63
 
 
-State 99
+State 102
 
    85 mulExpr: mulExpr MUL . unaryExpr
 
@@ -1569,15 +1592,15 @@ State 99
     STRING      shift, and go to state 53
 
     literalConst     go to state 54
-    compIdentifier   go to state 130
+    compIdentifier   go to state 83
     pIdentifier      go to state 56
     arrayIdentifier  go to state 57
     identifier       go to state 58
-    unaryExpr        go to state 133
+    unaryExpr        go to state 136
     primaryExpr      go to state 63
 
 
-State 100
+State 103
 
    86 mulExpr: mulExpr DIV . unaryExpr
 
@@ -1594,15 +1617,15 @@ State 100
     STRING      shift, and go to state 53
 
     literalConst     go to state 54
-    compIdentifier   go to state 130
+    compIdentifier   go to state 83
     pIdentifier      go to state 56
     arrayIdentifier  go to state 57
     identifier       go to state 58
-    unaryExpr        go to state 134
+    unaryExpr        go to state 137
     primaryExpr      go to state 63
 
 
-State 101
+State 104
 
    87 mulExpr: mulExpr MOD . unaryExpr
 
@@ -1619,22 +1642,22 @@ State 101
     STRING      shift, and go to state 53
 
     literalConst     go to state 54
-    compIdentifier   go to state 130
+    compIdentifier   go to state 83
     pIdentifier      go to state 56
     arrayIdentifier  go to state 57
     identifier       go to state 58
-    unaryExpr        go to state 135
+    unaryExpr        go to state 138
     primaryExpr      go to state 63
 
 
-State 102
+State 105
 
    26 constArrayIdentifier: pDeclIdentifier LBRACKET INTEGER RBRACKET .
 
     $default  reduce using rule 26 (constArrayIdentifier)
 
 
-State 103
+State 106
 
    45 funcDef: basicType pDeclIdentifier funcLPAREN RPAREN LBRACE . blockItems RBRACE
 
@@ -1643,16 +1666,16 @@ State 103
     T_BOOL      shift, and go to state 3
     T_VOID      shift, and go to state 4
     ADDR        shift, and go to state 43
-    SEMICOLON   shift, and go to state 136
+    SEMICOLON   shift, and go to state 139
     LPAREN      shift, and go to state 44
-    LBRACE      shift, and go to state 137
+    LBRACE      shift, and go to state 140
     CONST       shift, and go to state 5
-    IF_         shift, and go to state 138
-    WHILE_      shift, and go to state 139
-    FOR_        shift, and go to state 140
-    BREAK       shift, and go to state 141
-    CONTINUE    shift, and go to state 142
-    RETURN      shift, and go to state 143
+    IF_         shift, and go to state 141
+    WHILE_      shift, and go to state 142
+    FOR_        shift, and go to state 143
+    BREAK       shift, and go to state 144
+    CONTINUE    shift, and go to state 145
+    RETURN      shift, and go to state 146
     PLUS        shift, and go to state 45
     MINUS       shift, and go to state 46
     MUL         shift, and go to state 47
@@ -1663,38 +1686,38 @@ State 103
     BOOL        shift, and go to state 52
     STRING      shift, and go to state 53
 
-    basicType        go to state 144
+    basicType        go to state 147
     literalConst     go to state 54
     compIdentifier   go to state 55
     pIdentifier      go to state 56
     arrayIdentifier  go to state 57
     identifier       go to state 58
-    decl             go to state 145
+    decl             go to state 148
     constDecl        go to state 9
     varDecl          go to state 10
-    block            go to state 146
-    blockLBRACE      go to state 147
-    blockItems       go to state 148
-    blockItem        go to state 149
-    stmt             go to state 150
-    IF               go to state 151
-    WHILE            go to state 152
-    FOR              go to state 153
-    expr             go to state 154
+    block            go to state 149
+    blockLBRACE      go to state 150
+    blockItems       go to state 151
+    blockItem        go to state 152
+    stmt             go to state 153
+    IF               go to state 154
+    WHILE            go to state 155
+    FOR              go to state 156
+    expr             go to state 157
     addExpr          go to state 60
     mulExpr          go to state 61
     unaryExpr        go to state 62
     primaryExpr      go to state 63
 
 
-State 104
+State 107
 
    49 funcFParam: basicType pDeclIdentifier .
 
     $default  reduce using rule 49 (funcFParam)
 
 
-State 105
+State 108
 
    48 funcFParams: funcFParams COMMA . funcFParam
 
@@ -1704,179 +1727,65 @@ State 105
     T_VOID  shift, and go to state 4
 
     basicType   go to state 66
-    funcFParam  go to state 155
+    funcFParam  go to state 158
 
 
-State 106
+State 109
 
    44 funcDef: basicType pDeclIdentifier funcLPAREN funcFParams RPAREN . LBRACE blockItems RBRACE
 
-    LBRACE  shift, and go to state 156
+    LBRACE  shift, and go to state 159
 
 
-State 107
+State 110
 
    36 ArrayInitVal: literalConst .
 
     $default  reduce using rule 36 (ArrayInitVal)
 
 
-State 108
+State 111
 
    37 ArrayInitVal: ArrayInitVal . COMMA literalConst
    43 varDef: constArrayIdentifier ASSIGN LBRACE ArrayInitVal . RBRACE
 
-    COMMA   shift, and go to state 157
-    RBRACE  shift, and go to state 158
+    COMMA   shift, and go to state 160
+    RBRACE  shift, and go to state 161
 
 
-State 109
+State 112
 
    27 constArrayIdentifier: constArrayIdentifier LBRACKET INTEGER RBRACKET .
 
     $default  reduce using rule 27 (constArrayIdentifier)
 
 
-State 110
+State 113
 
    35 constDef: constArrayIdentifier ASSIGN LBRACE ArrayInitVal . RBRACE
    37 ArrayInitVal: ArrayInitVal . COMMA literalConst
 
-    COMMA   shift, and go to state 157
-    RBRACE  shift, and go to state 159
-
-
-State 111
-
-   94 primaryExpr: LPAREN expr RPAREN .
-
-    $default  reduce using rule 94 (primaryExpr)
-
-
-State 112
-
-  102 LOrExpr: LAndExpr OR . LOrExpr
-
-    ADDR        shift, and go to state 43
-    LPAREN      shift, and go to state 44
-    PLUS        shift, and go to state 45
-    MINUS       shift, and go to state 46
-    MUL         shift, and go to state 47
-    NOT         shift, and go to state 48
-    IDENTIFIER  shift, and go to state 49
-    INTEGER     shift, and go to state 50
-    CHAR        shift, and go to state 51
-    BOOL        shift, and go to state 52
-    STRING      shift, and go to state 53
-
-    literalConst     go to state 54
-    compIdentifier   go to state 55
-    pIdentifier      go to state 56
-    arrayIdentifier  go to state 57
-    identifier       go to state 58
-    expr             go to state 81
-    addExpr          go to state 60
-    mulExpr          go to state 61
-    unaryExpr        go to state 62
-    primaryExpr      go to state 63
-    LOrExpr          go to state 160
-    LAndExpr         go to state 84
-    eqExpr           go to state 85
-    relExpr          go to state 86
-
-
-State 113
-
-  106 eqExpr: eqExpr EQ . relExpr
-
-    ADDR        shift, and go to state 43
-    LPAREN      shift, and go to state 44
-    PLUS        shift, and go to state 45
-    MINUS       shift, and go to state 46
-    MUL         shift, and go to state 47
-    NOT         shift, and go to state 48
-    IDENTIFIER  shift, and go to state 49
-    INTEGER     shift, and go to state 50
-    CHAR        shift, and go to state 51
-    BOOL        shift, and go to state 52
-    STRING      shift, and go to state 53
-
-    literalConst     go to state 54
-    compIdentifier   go to state 55
-    pIdentifier      go to state 56
-    arrayIdentifier  go to state 57
-    identifier       go to state 58
-    expr             go to state 81
-    addExpr          go to state 60
-    mulExpr          go to state 61
-    unaryExpr        go to state 62
-    primaryExpr      go to state 63
-    relExpr          go to state 161
+    COMMA   shift, and go to state 160
+    RBRACE  shift, and go to state 162
 
 
 State 114
 
-  107 eqExpr: eqExpr NEQ . relExpr
+   95 primaryExpr: LPAREN expr RPAREN .
 
-    ADDR        shift, and go to state 43
-    LPAREN      shift, and go to state 44
-    PLUS        shift, and go to state 45
-    MINUS       shift, and go to state 46
-    MUL         shift, and go to state 47
-    NOT         shift, and go to state 48
-    IDENTIFIER  shift, and go to state 49
-    INTEGER     shift, and go to state 50
-    CHAR        shift, and go to state 51
-    BOOL        shift, and go to state 52
-    STRING      shift, and go to state 53
-
-    literalConst     go to state 54
-    compIdentifier   go to state 55
-    pIdentifier      go to state 56
-    arrayIdentifier  go to state 57
-    identifier       go to state 58
-    expr             go to state 81
-    addExpr          go to state 60
-    mulExpr          go to state 61
-    unaryExpr        go to state 62
-    primaryExpr      go to state 63
-    relExpr          go to state 162
+    $default  reduce using rule 95 (primaryExpr)
 
 
 State 115
 
-  104 LAndExpr: eqExpr AND . LAndExpr
+   96 primaryExpr: LPAREN cond RPAREN .
 
-    ADDR        shift, and go to state 43
-    LPAREN      shift, and go to state 44
-    PLUS        shift, and go to state 45
-    MINUS       shift, and go to state 46
-    MUL         shift, and go to state 47
-    NOT         shift, and go to state 48
-    IDENTIFIER  shift, and go to state 49
-    INTEGER     shift, and go to state 50
-    CHAR        shift, and go to state 51
-    BOOL        shift, and go to state 52
-    STRING      shift, and go to state 53
-
-    literalConst     go to state 54
-    compIdentifier   go to state 55
-    pIdentifier      go to state 56
-    arrayIdentifier  go to state 57
-    identifier       go to state 58
-    expr             go to state 81
-    addExpr          go to state 60
-    mulExpr          go to state 61
-    unaryExpr        go to state 62
-    primaryExpr      go to state 63
-    LAndExpr         go to state 163
-    eqExpr           go to state 85
-    relExpr          go to state 86
+    $default  reduce using rule 96 (primaryExpr)
 
 
 State 116
 
-  111 relExpr: relExpr GRAEQ . expr
+  103 LOrExpr: LAndExpr OR . LOrExpr
 
     ADDR        shift, and go to state 43
     LPAREN      shift, and go to state 44
@@ -1895,16 +1804,20 @@ State 116
     pIdentifier      go to state 56
     arrayIdentifier  go to state 57
     identifier       go to state 58
-    expr             go to state 164
+    expr             go to state 88
     addExpr          go to state 60
     mulExpr          go to state 61
     unaryExpr        go to state 62
     primaryExpr      go to state 63
+    LOrExpr          go to state 163
+    LAndExpr         go to state 80
+    eqExpr           go to state 81
+    relExpr          go to state 82
 
 
 State 117
 
-  112 relExpr: relExpr LESEQ . expr
+  105 LAndExpr: eqExpr AND . LAndExpr
 
     ADDR        shift, and go to state 43
     LPAREN      shift, and go to state 44
@@ -1923,16 +1836,49 @@ State 117
     pIdentifier      go to state 56
     arrayIdentifier  go to state 57
     identifier       go to state 58
-    expr             go to state 165
+    expr             go to state 88
     addExpr          go to state 60
     mulExpr          go to state 61
     unaryExpr        go to state 62
     primaryExpr      go to state 63
+    LAndExpr         go to state 164
+    eqExpr           go to state 81
+    relExpr          go to state 82
 
 
 State 118
 
-  109 relExpr: relExpr GRA . expr
+  107 eqExpr: relExpr EQ . eqExpr
+
+    ADDR        shift, and go to state 43
+    LPAREN      shift, and go to state 44
+    PLUS        shift, and go to state 45
+    MINUS       shift, and go to state 46
+    MUL         shift, and go to state 47
+    NOT         shift, and go to state 48
+    IDENTIFIER  shift, and go to state 49
+    INTEGER     shift, and go to state 50
+    CHAR        shift, and go to state 51
+    BOOL        shift, and go to state 52
+    STRING      shift, and go to state 53
+
+    literalConst     go to state 54
+    compIdentifier   go to state 55
+    pIdentifier      go to state 56
+    arrayIdentifier  go to state 57
+    identifier       go to state 58
+    expr             go to state 88
+    addExpr          go to state 60
+    mulExpr          go to state 61
+    unaryExpr        go to state 62
+    primaryExpr      go to state 63
+    eqExpr           go to state 165
+    relExpr          go to state 82
+
+
+State 119
+
+  112 relExpr: relExpr GRAEQ . expr
 
     ADDR        shift, and go to state 43
     LPAREN      shift, and go to state 44
@@ -1958,9 +1904,9 @@ State 118
     primaryExpr      go to state 63
 
 
-State 119
+State 120
 
-  110 relExpr: relExpr LES . expr
+  113 relExpr: relExpr LESEQ . expr
 
     ADDR        shift, and go to state 43
     LPAREN      shift, and go to state 44
@@ -1986,196 +1932,11 @@ State 119
     primaryExpr      go to state 63
 
 
-State 120
-
-   75 expr: compIdentifier ASSIGN expr .
-
-    $default  reduce using rule 75 (expr)
-
-
 State 121
 
-   76 expr: compIdentifier PLUSASSIGN expr .
-
-    $default  reduce using rule 76 (expr)
-
-
-State 122
-
-   77 expr: compIdentifier MINUSASSIGN expr .
-
-    $default  reduce using rule 77 (expr)
-
-
-State 123
-
-   78 expr: compIdentifier MULASSIGN expr .
-
-    $default  reduce using rule 78 (expr)
-
-
-State 124
-
-   79 expr: compIdentifier DIVASSIGN expr .
-
-    $default  reduce using rule 79 (expr)
-
-
-State 125
-
-   96 primaryExpr: pIdentifier LPAREN RPAREN .
-
-    $default  reduce using rule 96 (primaryExpr)
-
-
-State 126
-
-   99 funcRParams: expr .
-
-    $default  reduce using rule 99 (funcRParams)
-
-
-State 127
-
-   95 primaryExpr: pIdentifier LPAREN funcRParams . RPAREN
-  100 funcRParams: funcRParams . COMMA expr
-
-    COMMA   shift, and go to state 168
-    RPAREN  shift, and go to state 169
-
-
-State 128
-
-   18 arrayIdentifier: pIdentifier LBRACKET expr . RBRACKET
-
-    RBRACKET  shift, and go to state 170
-
-
-State 129
-
-   19 arrayIdentifier: arrayIdentifier LBRACKET expr . RBRACKET
-
-    RBRACKET  shift, and go to state 171
-
-
-State 130
-
-   97 primaryExpr: compIdentifier .
-
-    $default  reduce using rule 97 (primaryExpr)
-
-
-State 131
-
-   82 addExpr: addExpr PLUS mulExpr .
-   85 mulExpr: mulExpr . MUL unaryExpr
-   86        | mulExpr . DIV unaryExpr
-   87        | mulExpr . MOD unaryExpr
-
-    MUL  shift, and go to state 99
-    DIV  shift, and go to state 100
-    MOD  shift, and go to state 101
-
-    MUL       [reduce using rule 82 (addExpr)]
-    DIV       [reduce using rule 82 (addExpr)]
-    MOD       [reduce using rule 82 (addExpr)]
-    $default  reduce using rule 82 (addExpr)
-
-
-State 132
-
-   83 addExpr: addExpr MINUS mulExpr .
-   85 mulExpr: mulExpr . MUL unaryExpr
-   86        | mulExpr . DIV unaryExpr
-   87        | mulExpr . MOD unaryExpr
-
-    MUL  shift, and go to state 99
-    DIV  shift, and go to state 100
-    MOD  shift, and go to state 101
-
-    MUL       [reduce using rule 83 (addExpr)]
-    DIV       [reduce using rule 83 (addExpr)]
-    MOD       [reduce using rule 83 (addExpr)]
-    $default  reduce using rule 83 (addExpr)
-
-
-State 133
-
-   85 mulExpr: mulExpr MUL unaryExpr .
-
-    $default  reduce using rule 85 (mulExpr)
-
-
-State 134
-
-   86 mulExpr: mulExpr DIV unaryExpr .
-
-    $default  reduce using rule 86 (mulExpr)
-
-
-State 135
-
-   87 mulExpr: mulExpr MOD unaryExpr .
-
-    $default  reduce using rule 87 (mulExpr)
-
-
-State 136
-
-   59 stmt: SEMICOLON .
-
-    $default  reduce using rule 59 (stmt)
-
-
-State 137
-
-   51 blockLBRACE: LBRACE .
-
-    $default  reduce using rule 51 (blockLBRACE)
-
-
-State 138
-
-   71 IF: IF_ .
-
-    $default  reduce using rule 71 (IF)
-
-
-State 139
-
-   72 WHILE: WHILE_ .
-
-    $default  reduce using rule 72 (WHILE)
-
-
-State 140
-
-   73 FOR: FOR_ .
-
-    $default  reduce using rule 73 (FOR)
-
-
-State 141
-
-   67 stmt: BREAK . SEMICOLON
-
-    SEMICOLON  shift, and go to state 172
-
-
-State 142
-
-   68 stmt: CONTINUE . SEMICOLON
-
-    SEMICOLON  shift, and go to state 173
-
-
-State 143
-
-   69 stmt: RETURN . SEMICOLON
-   70     | RETURN . expr SEMICOLON
+  108 eqExpr: relExpr NEQ . eqExpr
 
     ADDR        shift, and go to state 43
-    SEMICOLON   shift, and go to state 174
     LPAREN      shift, and go to state 44
     PLUS        shift, and go to state 45
     MINUS       shift, and go to state 46
@@ -2192,14 +1953,278 @@ State 143
     pIdentifier      go to state 56
     arrayIdentifier  go to state 57
     identifier       go to state 58
-    expr             go to state 175
+    expr             go to state 88
+    addExpr          go to state 60
+    mulExpr          go to state 61
+    unaryExpr        go to state 62
+    primaryExpr      go to state 63
+    eqExpr           go to state 168
+    relExpr          go to state 82
+
+
+State 122
+
+  110 relExpr: relExpr GRA . expr
+
+    ADDR        shift, and go to state 43
+    LPAREN      shift, and go to state 44
+    PLUS        shift, and go to state 45
+    MINUS       shift, and go to state 46
+    MUL         shift, and go to state 47
+    NOT         shift, and go to state 48
+    IDENTIFIER  shift, and go to state 49
+    INTEGER     shift, and go to state 50
+    CHAR        shift, and go to state 51
+    BOOL        shift, and go to state 52
+    STRING      shift, and go to state 53
+
+    literalConst     go to state 54
+    compIdentifier   go to state 55
+    pIdentifier      go to state 56
+    arrayIdentifier  go to state 57
+    identifier       go to state 58
+    expr             go to state 169
     addExpr          go to state 60
     mulExpr          go to state 61
     unaryExpr        go to state 62
     primaryExpr      go to state 63
 
 
+State 123
+
+  111 relExpr: relExpr LES . expr
+
+    ADDR        shift, and go to state 43
+    LPAREN      shift, and go to state 44
+    PLUS        shift, and go to state 45
+    MINUS       shift, and go to state 46
+    MUL         shift, and go to state 47
+    NOT         shift, and go to state 48
+    IDENTIFIER  shift, and go to state 49
+    INTEGER     shift, and go to state 50
+    CHAR        shift, and go to state 51
+    BOOL        shift, and go to state 52
+    STRING      shift, and go to state 53
+
+    literalConst     go to state 54
+    compIdentifier   go to state 55
+    pIdentifier      go to state 56
+    arrayIdentifier  go to state 57
+    identifier       go to state 58
+    expr             go to state 170
+    addExpr          go to state 60
+    mulExpr          go to state 61
+    unaryExpr        go to state 62
+    primaryExpr      go to state 63
+
+
+State 124
+
+   75 expr: compIdentifier ASSIGN expr .
+
+    $default  reduce using rule 75 (expr)
+
+
+State 125
+
+   76 expr: compIdentifier PLUSASSIGN expr .
+
+    $default  reduce using rule 76 (expr)
+
+
+State 126
+
+   77 expr: compIdentifier MINUSASSIGN expr .
+
+    $default  reduce using rule 77 (expr)
+
+
+State 127
+
+   78 expr: compIdentifier MULASSIGN expr .
+
+    $default  reduce using rule 78 (expr)
+
+
+State 128
+
+   79 expr: compIdentifier DIVASSIGN expr .
+
+    $default  reduce using rule 79 (expr)
+
+
+State 129
+
+   98 primaryExpr: pIdentifier LPAREN RPAREN .
+
+    $default  reduce using rule 98 (primaryExpr)
+
+
+State 130
+
+  100 funcRParams: expr .
+
+    $default  reduce using rule 100 (funcRParams)
+
+
+State 131
+
+   97 primaryExpr: pIdentifier LPAREN funcRParams . RPAREN
+  101 funcRParams: funcRParams . COMMA expr
+
+    COMMA   shift, and go to state 171
+    RPAREN  shift, and go to state 172
+
+
+State 132
+
+   18 arrayIdentifier: pIdentifier LBRACKET expr . RBRACKET
+
+    RBRACKET  shift, and go to state 173
+
+
+State 133
+
+   19 arrayIdentifier: arrayIdentifier LBRACKET expr . RBRACKET
+
+    RBRACKET  shift, and go to state 174
+
+
+State 134
+
+   82 addExpr: addExpr PLUS mulExpr .
+   85 mulExpr: mulExpr . MUL unaryExpr
+   86        | mulExpr . DIV unaryExpr
+   87        | mulExpr . MOD unaryExpr
+
+    MUL  shift, and go to state 102
+    DIV  shift, and go to state 103
+    MOD  shift, and go to state 104
+
+    MUL       [reduce using rule 82 (addExpr)]
+    DIV       [reduce using rule 82 (addExpr)]
+    MOD       [reduce using rule 82 (addExpr)]
+    $default  reduce using rule 82 (addExpr)
+
+
+State 135
+
+   83 addExpr: addExpr MINUS mulExpr .
+   85 mulExpr: mulExpr . MUL unaryExpr
+   86        | mulExpr . DIV unaryExpr
+   87        | mulExpr . MOD unaryExpr
+
+    MUL  shift, and go to state 102
+    DIV  shift, and go to state 103
+    MOD  shift, and go to state 104
+
+    MUL       [reduce using rule 83 (addExpr)]
+    DIV       [reduce using rule 83 (addExpr)]
+    MOD       [reduce using rule 83 (addExpr)]
+    $default  reduce using rule 83 (addExpr)
+
+
+State 136
+
+   85 mulExpr: mulExpr MUL unaryExpr .
+
+    $default  reduce using rule 85 (mulExpr)
+
+
+State 137
+
+   86 mulExpr: mulExpr DIV unaryExpr .
+
+    $default  reduce using rule 86 (mulExpr)
+
+
+State 138
+
+   87 mulExpr: mulExpr MOD unaryExpr .
+
+    $default  reduce using rule 87 (mulExpr)
+
+
+State 139
+
+   59 stmt: SEMICOLON .
+
+    $default  reduce using rule 59 (stmt)
+
+
+State 140
+
+   51 blockLBRACE: LBRACE .
+
+    $default  reduce using rule 51 (blockLBRACE)
+
+
+State 141
+
+   71 IF: IF_ .
+
+    $default  reduce using rule 71 (IF)
+
+
+State 142
+
+   72 WHILE: WHILE_ .
+
+    $default  reduce using rule 72 (WHILE)
+
+
+State 143
+
+   73 FOR: FOR_ .
+
+    $default  reduce using rule 73 (FOR)
+
+
 State 144
+
+   67 stmt: BREAK . SEMICOLON
+
+    SEMICOLON  shift, and go to state 175
+
+
+State 145
+
+   68 stmt: CONTINUE . SEMICOLON
+
+    SEMICOLON  shift, and go to state 176
+
+
+State 146
+
+   69 stmt: RETURN . SEMICOLON
+   70     | RETURN . expr SEMICOLON
+
+    ADDR        shift, and go to state 43
+    SEMICOLON   shift, and go to state 177
+    LPAREN      shift, and go to state 44
+    PLUS        shift, and go to state 45
+    MINUS       shift, and go to state 46
+    MUL         shift, and go to state 47
+    NOT         shift, and go to state 48
+    IDENTIFIER  shift, and go to state 49
+    INTEGER     shift, and go to state 50
+    CHAR        shift, and go to state 51
+    BOOL        shift, and go to state 52
+    STRING      shift, and go to state 53
+
+    literalConst     go to state 54
+    compIdentifier   go to state 55
+    pIdentifier      go to state 56
+    arrayIdentifier  go to state 57
+    identifier       go to state 58
+    expr             go to state 178
+    addExpr          go to state 60
+    mulExpr          go to state 61
+    unaryExpr        go to state 62
+    primaryExpr      go to state 63
+
+
+State 147
 
    38 varDecl: basicType . varDefs SEMICOLON
 
@@ -2215,21 +2240,21 @@ State 144
     varDef                go to state 24
 
 
-State 145
+State 148
 
    55 blockItem: decl .
 
     $default  reduce using rule 55 (blockItem)
 
 
-State 146
+State 149
 
    61 stmt: block .
 
     $default  reduce using rule 61 (stmt)
 
 
-State 147
+State 150
 
    50 block: blockLBRACE . blockItems blockRBRACE
 
@@ -2238,16 +2263,16 @@ State 147
     T_BOOL      shift, and go to state 3
     T_VOID      shift, and go to state 4
     ADDR        shift, and go to state 43
-    SEMICOLON   shift, and go to state 136
+    SEMICOLON   shift, and go to state 139
     LPAREN      shift, and go to state 44
-    LBRACE      shift, and go to state 137
+    LBRACE      shift, and go to state 140
     CONST       shift, and go to state 5
-    IF_         shift, and go to state 138
-    WHILE_      shift, and go to state 139
-    FOR_        shift, and go to state 140
-    BREAK       shift, and go to state 141
-    CONTINUE    shift, and go to state 142
-    RETURN      shift, and go to state 143
+    IF_         shift, and go to state 141
+    WHILE_      shift, and go to state 142
+    FOR_        shift, and go to state 143
+    BREAK       shift, and go to state 144
+    CONTINUE    shift, and go to state 145
+    RETURN      shift, and go to state 146
     PLUS        shift, and go to state 45
     MINUS       shift, and go to state 46
     MUL         shift, and go to state 47
@@ -2258,31 +2283,31 @@ State 147
     BOOL        shift, and go to state 52
     STRING      shift, and go to state 53
 
-    basicType        go to state 144
+    basicType        go to state 147
     literalConst     go to state 54
     compIdentifier   go to state 55
     pIdentifier      go to state 56
     arrayIdentifier  go to state 57
     identifier       go to state 58
-    decl             go to state 145
+    decl             go to state 148
     constDecl        go to state 9
     varDecl          go to state 10
-    block            go to state 146
-    blockLBRACE      go to state 147
-    blockItems       go to state 176
-    blockItem        go to state 149
-    stmt             go to state 150
-    IF               go to state 151
-    WHILE            go to state 152
-    FOR              go to state 153
-    expr             go to state 154
+    block            go to state 149
+    blockLBRACE      go to state 150
+    blockItems       go to state 179
+    blockItem        go to state 152
+    stmt             go to state 153
+    IF               go to state 154
+    WHILE            go to state 155
+    FOR              go to state 156
+    expr             go to state 157
     addExpr          go to state 60
     mulExpr          go to state 61
     unaryExpr        go to state 62
     primaryExpr      go to state 63
 
 
-State 148
+State 151
 
    45 funcDef: basicType pDeclIdentifier funcLPAREN RPAREN LBRACE blockItems . RBRACE
    54 blockItems: blockItems . blockItem
@@ -2292,17 +2317,17 @@ State 148
     T_BOOL      shift, and go to state 3
     T_VOID      shift, and go to state 4
     ADDR        shift, and go to state 43
-    SEMICOLON   shift, and go to state 136
+    SEMICOLON   shift, and go to state 139
     LPAREN      shift, and go to state 44
-    LBRACE      shift, and go to state 137
-    RBRACE      shift, and go to state 177
+    LBRACE      shift, and go to state 140
+    RBRACE      shift, and go to state 180
     CONST       shift, and go to state 5
-    IF_         shift, and go to state 138
-    WHILE_      shift, and go to state 139
-    FOR_        shift, and go to state 140
-    BREAK       shift, and go to state 141
-    CONTINUE    shift, and go to state 142
-    RETURN      shift, and go to state 143
+    IF_         shift, and go to state 141
+    WHILE_      shift, and go to state 142
+    FOR_        shift, and go to state 143
+    BREAK       shift, and go to state 144
+    CONTINUE    shift, and go to state 145
+    RETURN      shift, and go to state 146
     PLUS        shift, and go to state 45
     MINUS       shift, and go to state 46
     MUL         shift, and go to state 47
@@ -2313,81 +2338,81 @@ State 148
     BOOL        shift, and go to state 52
     STRING      shift, and go to state 53
 
-    basicType        go to state 144
+    basicType        go to state 147
     literalConst     go to state 54
     compIdentifier   go to state 55
     pIdentifier      go to state 56
     arrayIdentifier  go to state 57
     identifier       go to state 58
-    decl             go to state 145
+    decl             go to state 148
     constDecl        go to state 9
     varDecl          go to state 10
-    block            go to state 146
-    blockLBRACE      go to state 147
-    blockItem        go to state 178
-    stmt             go to state 150
-    IF               go to state 151
-    WHILE            go to state 152
-    FOR              go to state 153
-    expr             go to state 154
+    block            go to state 149
+    blockLBRACE      go to state 150
+    blockItem        go to state 181
+    stmt             go to state 153
+    IF               go to state 154
+    WHILE            go to state 155
+    FOR              go to state 156
+    expr             go to state 157
     addExpr          go to state 60
     mulExpr          go to state 61
     unaryExpr        go to state 62
     primaryExpr      go to state 63
 
 
-State 149
+State 152
 
    53 blockItems: blockItem .
 
     $default  reduce using rule 53 (blockItems)
 
 
-State 150
+State 153
 
    56 blockItem: stmt .
 
     $default  reduce using rule 56 (blockItem)
 
 
-State 151
+State 154
 
    62 stmt: IF . LPAREN cond RPAREN stmt_ ELSE stmt_
    63     | IF . LPAREN cond RPAREN stmt_
 
-    LPAREN  shift, and go to state 179
+    LPAREN  shift, and go to state 182
 
 
-State 152
+State 155
 
    64 stmt: WHILE . LPAREN cond RPAREN stmt_
 
-    LPAREN  shift, and go to state 180
+    LPAREN  shift, and go to state 183
 
 
-State 153
+State 156
 
    65 stmt: FOR . LPAREN basicType varDefs SEMICOLON cond SEMICOLON expr RPAREN stmt_
    66     | FOR . LPAREN expr SEMICOLON cond SEMICOLON expr RPAREN stmt_
 
-    LPAREN  shift, and go to state 181
+    LPAREN  shift, and go to state 184
 
 
-State 154
+State 157
 
    60 stmt: expr . SEMICOLON
 
-    SEMICOLON  shift, and go to state 182
+    SEMICOLON  shift, and go to state 185
 
 
-State 155
+State 158
 
    48 funcFParams: funcFParams COMMA funcFParam .
 
     $default  reduce using rule 48 (funcFParams)
 
 
-State 156
+State 159
 
    44 funcDef: basicType pDeclIdentifier funcLPAREN funcFParams RPAREN LBRACE . blockItems RBRACE
 
@@ -2396,16 +2421,16 @@ State 156
     T_BOOL      shift, and go to state 3
     T_VOID      shift, and go to state 4
     ADDR        shift, and go to state 43
-    SEMICOLON   shift, and go to state 136
+    SEMICOLON   shift, and go to state 139
     LPAREN      shift, and go to state 44
-    LBRACE      shift, and go to state 137
+    LBRACE      shift, and go to state 140
     CONST       shift, and go to state 5
-    IF_         shift, and go to state 138
-    WHILE_      shift, and go to state 139
-    FOR_        shift, and go to state 140
-    BREAK       shift, and go to state 141
-    CONTINUE    shift, and go to state 142
-    RETURN      shift, and go to state 143
+    IF_         shift, and go to state 141
+    WHILE_      shift, and go to state 142
+    FOR_        shift, and go to state 143
+    BREAK       shift, and go to state 144
+    CONTINUE    shift, and go to state 145
+    RETURN      shift, and go to state 146
     PLUS        shift, and go to state 45
     MINUS       shift, and go to state 46
     MUL         shift, and go to state 47
@@ -2416,31 +2441,31 @@ State 156
     BOOL        shift, and go to state 52
     STRING      shift, and go to state 53
 
-    basicType        go to state 144
+    basicType        go to state 147
     literalConst     go to state 54
     compIdentifier   go to state 55
     pIdentifier      go to state 56
     arrayIdentifier  go to state 57
     identifier       go to state 58
-    decl             go to state 145
+    decl             go to state 148
     constDecl        go to state 9
     varDecl          go to state 10
-    block            go to state 146
-    blockLBRACE      go to state 147
-    blockItems       go to state 183
-    blockItem        go to state 149
-    stmt             go to state 150
-    IF               go to state 151
-    WHILE            go to state 152
-    FOR              go to state 153
-    expr             go to state 154
+    block            go to state 149
+    blockLBRACE      go to state 150
+    blockItems       go to state 186
+    blockItem        go to state 152
+    stmt             go to state 153
+    IF               go to state 154
+    WHILE            go to state 155
+    FOR              go to state 156
+    expr             go to state 157
     addExpr          go to state 60
     mulExpr          go to state 61
     unaryExpr        go to state 62
     primaryExpr      go to state 63
 
 
-State 157
+State 160
 
    37 ArrayInitVal: ArrayInitVal COMMA . literalConst
 
@@ -2449,108 +2474,82 @@ State 157
     BOOL     shift, and go to state 52
     STRING   shift, and go to state 53
 
-    literalConst  go to state 184
+    literalConst  go to state 187
 
 
-State 158
+State 161
 
    43 varDef: constArrayIdentifier ASSIGN LBRACE ArrayInitVal RBRACE .
 
     $default  reduce using rule 43 (varDef)
 
 
-State 159
+State 162
 
    35 constDef: constArrayIdentifier ASSIGN LBRACE ArrayInitVal RBRACE .
 
     $default  reduce using rule 35 (constDef)
 
 
-State 160
-
-  102 LOrExpr: LAndExpr OR LOrExpr .
-
-    $default  reduce using rule 102 (LOrExpr)
-
-
-State 161
-
-  106 eqExpr: eqExpr EQ relExpr .
-  109 relExpr: relExpr . GRA expr
-  110        | relExpr . LES expr
-  111        | relExpr . GRAEQ expr
-  112        | relExpr . LESEQ expr
-
-    GRAEQ  shift, and go to state 116
-    LESEQ  shift, and go to state 117
-    GRA    shift, and go to state 118
-    LES    shift, and go to state 119
-
-    GRAEQ     [reduce using rule 106 (eqExpr)]
-    LESEQ     [reduce using rule 106 (eqExpr)]
-    GRA       [reduce using rule 106 (eqExpr)]
-    LES       [reduce using rule 106 (eqExpr)]
-    $default  reduce using rule 106 (eqExpr)
-
-
-State 162
-
-  107 eqExpr: eqExpr NEQ relExpr .
-  109 relExpr: relExpr . GRA expr
-  110        | relExpr . LES expr
-  111        | relExpr . GRAEQ expr
-  112        | relExpr . LESEQ expr
-
-    GRAEQ  shift, and go to state 116
-    LESEQ  shift, and go to state 117
-    GRA    shift, and go to state 118
-    LES    shift, and go to state 119
-
-    GRAEQ     [reduce using rule 107 (eqExpr)]
-    LESEQ     [reduce using rule 107 (eqExpr)]
-    GRA       [reduce using rule 107 (eqExpr)]
-    LES       [reduce using rule 107 (eqExpr)]
-    $default  reduce using rule 107 (eqExpr)
-
-
 State 163
 
-  104 LAndExpr: eqExpr AND LAndExpr .
+  103 LOrExpr: LAndExpr OR LOrExpr .
 
-    $default  reduce using rule 104 (LAndExpr)
+    $default  reduce using rule 103 (LOrExpr)
 
 
 State 164
 
-  111 relExpr: relExpr GRAEQ expr .
+  105 LAndExpr: eqExpr AND LAndExpr .
 
-    $default  reduce using rule 111 (relExpr)
+    $default  reduce using rule 105 (LAndExpr)
 
 
 State 165
 
-  112 relExpr: relExpr LESEQ expr .
+  107 eqExpr: relExpr EQ eqExpr .
 
-    $default  reduce using rule 112 (relExpr)
+    $default  reduce using rule 107 (eqExpr)
 
 
 State 166
 
-  109 relExpr: relExpr GRA expr .
+  112 relExpr: relExpr GRAEQ expr .
 
-    $default  reduce using rule 109 (relExpr)
+    $default  reduce using rule 112 (relExpr)
 
 
 State 167
 
-  110 relExpr: relExpr LES expr .
+  113 relExpr: relExpr LESEQ expr .
 
-    $default  reduce using rule 110 (relExpr)
+    $default  reduce using rule 113 (relExpr)
 
 
 State 168
 
-  100 funcRParams: funcRParams COMMA . expr
+  108 eqExpr: relExpr NEQ eqExpr .
+
+    $default  reduce using rule 108 (eqExpr)
+
+
+State 169
+
+  110 relExpr: relExpr GRA expr .
+
+    $default  reduce using rule 110 (relExpr)
+
+
+State 170
+
+  111 relExpr: relExpr LES expr .
+
+    $default  reduce using rule 111 (relExpr)
+
+
+State 171
+
+  101 funcRParams: funcRParams COMMA . expr
 
     ADDR        shift, and go to state 43
     LPAREN      shift, and go to state 44
@@ -2569,63 +2568,63 @@ State 168
     pIdentifier      go to state 56
     arrayIdentifier  go to state 57
     identifier       go to state 58
-    expr             go to state 185
+    expr             go to state 188
     addExpr          go to state 60
     mulExpr          go to state 61
     unaryExpr        go to state 62
     primaryExpr      go to state 63
 
 
-State 169
+State 172
 
-   95 primaryExpr: pIdentifier LPAREN funcRParams RPAREN .
+   97 primaryExpr: pIdentifier LPAREN funcRParams RPAREN .
 
-    $default  reduce using rule 95 (primaryExpr)
+    $default  reduce using rule 97 (primaryExpr)
 
 
-State 170
+State 173
 
    18 arrayIdentifier: pIdentifier LBRACKET expr RBRACKET .
 
     $default  reduce using rule 18 (arrayIdentifier)
 
 
-State 171
+State 174
 
    19 arrayIdentifier: arrayIdentifier LBRACKET expr RBRACKET .
 
     $default  reduce using rule 19 (arrayIdentifier)
 
 
-State 172
+State 175
 
    67 stmt: BREAK SEMICOLON .
 
     $default  reduce using rule 67 (stmt)
 
 
-State 173
+State 176
 
    68 stmt: CONTINUE SEMICOLON .
 
     $default  reduce using rule 68 (stmt)
 
 
-State 174
+State 177
 
    69 stmt: RETURN SEMICOLON .
 
     $default  reduce using rule 69 (stmt)
 
 
-State 175
+State 178
 
    70 stmt: RETURN expr . SEMICOLON
 
-    SEMICOLON  shift, and go to state 186
+    SEMICOLON  shift, and go to state 189
 
 
-State 176
+State 179
 
    50 block: blockLBRACE blockItems . blockRBRACE
    54 blockItems: blockItems . blockItem
@@ -2635,17 +2634,17 @@ State 176
     T_BOOL      shift, and go to state 3
     T_VOID      shift, and go to state 4
     ADDR        shift, and go to state 43
-    SEMICOLON   shift, and go to state 136
+    SEMICOLON   shift, and go to state 139
     LPAREN      shift, and go to state 44
-    LBRACE      shift, and go to state 137
-    RBRACE      shift, and go to state 187
+    LBRACE      shift, and go to state 140
+    RBRACE      shift, and go to state 190
     CONST       shift, and go to state 5
-    IF_         shift, and go to state 138
-    WHILE_      shift, and go to state 139
-    FOR_        shift, and go to state 140
-    BREAK       shift, and go to state 141
-    CONTINUE    shift, and go to state 142
-    RETURN      shift, and go to state 143
+    IF_         shift, and go to state 141
+    WHILE_      shift, and go to state 142
+    FOR_        shift, and go to state 143
+    BREAK       shift, and go to state 144
+    CONTINUE    shift, and go to state 145
+    RETURN      shift, and go to state 146
     PLUS        shift, and go to state 45
     MINUS       shift, and go to state 46
     MUL         shift, and go to state 47
@@ -2656,45 +2655,45 @@ State 176
     BOOL        shift, and go to state 52
     STRING      shift, and go to state 53
 
-    basicType        go to state 144
+    basicType        go to state 147
     literalConst     go to state 54
     compIdentifier   go to state 55
     pIdentifier      go to state 56
     arrayIdentifier  go to state 57
     identifier       go to state 58
-    decl             go to state 145
+    decl             go to state 148
     constDecl        go to state 9
     varDecl          go to state 10
-    block            go to state 146
-    blockLBRACE      go to state 147
-    blockRBRACE      go to state 188
-    blockItem        go to state 178
-    stmt             go to state 150
-    IF               go to state 151
-    WHILE            go to state 152
-    FOR              go to state 153
-    expr             go to state 154
+    block            go to state 149
+    blockLBRACE      go to state 150
+    blockRBRACE      go to state 191
+    blockItem        go to state 181
+    stmt             go to state 153
+    IF               go to state 154
+    WHILE            go to state 155
+    FOR              go to state 156
+    expr             go to state 157
     addExpr          go to state 60
     mulExpr          go to state 61
     unaryExpr        go to state 62
     primaryExpr      go to state 63
 
 
-State 177
+State 180
 
    45 funcDef: basicType pDeclIdentifier funcLPAREN RPAREN LBRACE blockItems RBRACE .
 
     $default  reduce using rule 45 (funcDef)
 
 
-State 178
+State 181
 
    54 blockItems: blockItems blockItem .
 
     $default  reduce using rule 54 (blockItems)
 
 
-State 179
+State 182
 
    62 stmt: IF LPAREN . cond RPAREN stmt_ ELSE stmt_
    63     | IF LPAREN . cond RPAREN stmt_
@@ -2716,19 +2715,19 @@ State 179
     pIdentifier      go to state 56
     arrayIdentifier  go to state 57
     identifier       go to state 58
-    expr             go to state 81
-    cond             go to state 189
+    expr             go to state 88
+    cond             go to state 192
     addExpr          go to state 60
     mulExpr          go to state 61
     unaryExpr        go to state 62
     primaryExpr      go to state 63
-    LOrExpr          go to state 83
-    LAndExpr         go to state 84
-    eqExpr           go to state 85
-    relExpr          go to state 86
+    LOrExpr          go to state 79
+    LAndExpr         go to state 80
+    eqExpr           go to state 81
+    relExpr          go to state 82
 
 
-State 180
+State 183
 
    64 stmt: WHILE LPAREN . cond RPAREN stmt_
 
@@ -2749,19 +2748,19 @@ State 180
     pIdentifier      go to state 56
     arrayIdentifier  go to state 57
     identifier       go to state 58
-    expr             go to state 81
-    cond             go to state 190
+    expr             go to state 88
+    cond             go to state 193
     addExpr          go to state 60
     mulExpr          go to state 61
     unaryExpr        go to state 62
     primaryExpr      go to state 63
-    LOrExpr          go to state 83
-    LAndExpr         go to state 84
-    eqExpr           go to state 85
-    relExpr          go to state 86
+    LOrExpr          go to state 79
+    LAndExpr         go to state 80
+    eqExpr           go to state 81
+    relExpr          go to state 82
 
 
-State 181
+State 184
 
    65 stmt: FOR LPAREN . basicType varDefs SEMICOLON cond SEMICOLON expr RPAREN stmt_
    66     | FOR LPAREN . expr SEMICOLON cond SEMICOLON expr RPAREN stmt_
@@ -2782,27 +2781,27 @@ State 181
     BOOL        shift, and go to state 52
     STRING      shift, and go to state 53
 
-    basicType        go to state 191
+    basicType        go to state 194
     literalConst     go to state 54
     compIdentifier   go to state 55
     pIdentifier      go to state 56
     arrayIdentifier  go to state 57
     identifier       go to state 58
-    expr             go to state 192
+    expr             go to state 195
     addExpr          go to state 60
     mulExpr          go to state 61
     unaryExpr        go to state 62
     primaryExpr      go to state 63
 
 
-State 182
+State 185
 
    60 stmt: expr SEMICOLON .
 
     $default  reduce using rule 60 (stmt)
 
 
-State 183
+State 186
 
    44 funcDef: basicType pDeclIdentifier funcLPAREN funcFParams RPAREN LBRACE blockItems . RBRACE
    54 blockItems: blockItems . blockItem
@@ -2812,17 +2811,17 @@ State 183
     T_BOOL      shift, and go to state 3
     T_VOID      shift, and go to state 4
     ADDR        shift, and go to state 43
-    SEMICOLON   shift, and go to state 136
+    SEMICOLON   shift, and go to state 139
     LPAREN      shift, and go to state 44
-    LBRACE      shift, and go to state 137
-    RBRACE      shift, and go to state 193
+    LBRACE      shift, and go to state 140
+    RBRACE      shift, and go to state 196
     CONST       shift, and go to state 5
-    IF_         shift, and go to state 138
-    WHILE_      shift, and go to state 139
-    FOR_        shift, and go to state 140
-    BREAK       shift, and go to state 141
-    CONTINUE    shift, and go to state 142
-    RETURN      shift, and go to state 143
+    IF_         shift, and go to state 141
+    WHILE_      shift, and go to state 142
+    FOR_        shift, and go to state 143
+    BREAK       shift, and go to state 144
+    CONTINUE    shift, and go to state 145
+    RETURN      shift, and go to state 146
     PLUS        shift, and go to state 45
     MINUS       shift, and go to state 46
     MUL         shift, and go to state 47
@@ -2833,80 +2832,80 @@ State 183
     BOOL        shift, and go to state 52
     STRING      shift, and go to state 53
 
-    basicType        go to state 144
+    basicType        go to state 147
     literalConst     go to state 54
     compIdentifier   go to state 55
     pIdentifier      go to state 56
     arrayIdentifier  go to state 57
     identifier       go to state 58
-    decl             go to state 145
+    decl             go to state 148
     constDecl        go to state 9
     varDecl          go to state 10
-    block            go to state 146
-    blockLBRACE      go to state 147
-    blockItem        go to state 178
-    stmt             go to state 150
-    IF               go to state 151
-    WHILE            go to state 152
-    FOR              go to state 153
-    expr             go to state 154
+    block            go to state 149
+    blockLBRACE      go to state 150
+    blockItem        go to state 181
+    stmt             go to state 153
+    IF               go to state 154
+    WHILE            go to state 155
+    FOR              go to state 156
+    expr             go to state 157
     addExpr          go to state 60
     mulExpr          go to state 61
     unaryExpr        go to state 62
     primaryExpr      go to state 63
 
 
-State 184
+State 187
 
    37 ArrayInitVal: ArrayInitVal COMMA literalConst .
 
     $default  reduce using rule 37 (ArrayInitVal)
 
 
-State 185
+State 188
 
-  100 funcRParams: funcRParams COMMA expr .
+  101 funcRParams: funcRParams COMMA expr .
 
-    $default  reduce using rule 100 (funcRParams)
+    $default  reduce using rule 101 (funcRParams)
 
 
-State 186
+State 189
 
    70 stmt: RETURN expr SEMICOLON .
 
     $default  reduce using rule 70 (stmt)
 
 
-State 187
+State 190
 
    52 blockRBRACE: RBRACE .
 
     $default  reduce using rule 52 (blockRBRACE)
 
 
-State 188
+State 191
 
    50 block: blockLBRACE blockItems blockRBRACE .
 
     $default  reduce using rule 50 (block)
 
 
-State 189
+State 192
 
    62 stmt: IF LPAREN cond . RPAREN stmt_ ELSE stmt_
    63     | IF LPAREN cond . RPAREN stmt_
 
-    RPAREN  shift, and go to state 194
+    RPAREN  shift, and go to state 197
 
 
-State 190
+State 193
 
    64 stmt: WHILE LPAREN cond . RPAREN stmt_
 
-    RPAREN  shift, and go to state 195
+    RPAREN  shift, and go to state 198
 
 
-State 191
+State 194
 
    65 stmt: FOR LPAREN basicType . varDefs SEMICOLON cond SEMICOLON expr RPAREN stmt_
 
@@ -2918,39 +2917,39 @@ State 191
     pDeclIdentifier       go to state 71
     constArrayIdentifier  go to state 21
     declIdentifier        go to state 22
-    varDefs               go to state 196
+    varDefs               go to state 199
     varDef                go to state 24
 
 
-State 192
+State 195
 
    66 stmt: FOR LPAREN expr . SEMICOLON cond SEMICOLON expr RPAREN stmt_
 
-    SEMICOLON  shift, and go to state 197
+    SEMICOLON  shift, and go to state 200
 
 
-State 193
+State 196
 
    44 funcDef: basicType pDeclIdentifier funcLPAREN funcFParams RPAREN LBRACE blockItems RBRACE .
 
     $default  reduce using rule 44 (funcDef)
 
 
-State 194
+State 197
 
    62 stmt: IF LPAREN cond RPAREN . stmt_ ELSE stmt_
    63     | IF LPAREN cond RPAREN . stmt_
 
     ADDR        shift, and go to state 43
-    SEMICOLON   shift, and go to state 136
+    SEMICOLON   shift, and go to state 139
     LPAREN      shift, and go to state 44
-    LBRACE      shift, and go to state 198
-    IF_         shift, and go to state 138
-    WHILE_      shift, and go to state 139
-    FOR_        shift, and go to state 140
-    BREAK       shift, and go to state 141
-    CONTINUE    shift, and go to state 142
-    RETURN      shift, and go to state 143
+    LBRACE      shift, and go to state 201
+    IF_         shift, and go to state 141
+    WHILE_      shift, and go to state 142
+    FOR_        shift, and go to state 143
+    BREAK       shift, and go to state 144
+    CONTINUE    shift, and go to state 145
+    RETURN      shift, and go to state 146
     PLUS        shift, and go to state 45
     MINUS       shift, and go to state 46
     MUL         shift, and go to state 47
@@ -2966,34 +2965,34 @@ State 194
     pIdentifier      go to state 56
     arrayIdentifier  go to state 57
     identifier       go to state 58
-    block            go to state 146
-    blockLBRACE      go to state 147
-    stmt_            go to state 199
-    stmt             go to state 200
-    IF               go to state 151
-    WHILE            go to state 152
-    FOR              go to state 153
-    expr             go to state 154
+    block            go to state 149
+    blockLBRACE      go to state 150
+    stmt_            go to state 202
+    stmt             go to state 203
+    IF               go to state 154
+    WHILE            go to state 155
+    FOR              go to state 156
+    expr             go to state 157
     addExpr          go to state 60
     mulExpr          go to state 61
     unaryExpr        go to state 62
     primaryExpr      go to state 63
 
 
-State 195
+State 198
 
    64 stmt: WHILE LPAREN cond RPAREN . stmt_
 
     ADDR        shift, and go to state 43
-    SEMICOLON   shift, and go to state 136
+    SEMICOLON   shift, and go to state 139
     LPAREN      shift, and go to state 44
-    LBRACE      shift, and go to state 198
-    IF_         shift, and go to state 138
-    WHILE_      shift, and go to state 139
-    FOR_        shift, and go to state 140
-    BREAK       shift, and go to state 141
-    CONTINUE    shift, and go to state 142
-    RETURN      shift, and go to state 143
+    LBRACE      shift, and go to state 201
+    IF_         shift, and go to state 141
+    WHILE_      shift, and go to state 142
+    FOR_        shift, and go to state 143
+    BREAK       shift, and go to state 144
+    CONTINUE    shift, and go to state 145
+    RETURN      shift, and go to state 146
     PLUS        shift, and go to state 45
     MINUS       shift, and go to state 46
     MUL         shift, and go to state 47
@@ -3009,30 +3008,30 @@ State 195
     pIdentifier      go to state 56
     arrayIdentifier  go to state 57
     identifier       go to state 58
-    block            go to state 146
-    blockLBRACE      go to state 147
-    stmt_            go to state 201
-    stmt             go to state 200
-    IF               go to state 151
-    WHILE            go to state 152
-    FOR              go to state 153
-    expr             go to state 154
+    block            go to state 149
+    blockLBRACE      go to state 150
+    stmt_            go to state 204
+    stmt             go to state 203
+    IF               go to state 154
+    WHILE            go to state 155
+    FOR              go to state 156
+    expr             go to state 157
     addExpr          go to state 60
     mulExpr          go to state 61
     unaryExpr        go to state 62
     primaryExpr      go to state 63
 
 
-State 196
+State 199
 
    40 varDefs: varDefs . COMMA varDef
    65 stmt: FOR LPAREN basicType varDefs . SEMICOLON cond SEMICOLON expr RPAREN stmt_
 
-    SEMICOLON  shift, and go to state 202
+    SEMICOLON  shift, and go to state 205
     COMMA      shift, and go to state 38
 
 
-State 197
+State 200
 
    66 stmt: FOR LPAREN expr SEMICOLON . cond SEMICOLON expr RPAREN stmt_
 
@@ -3053,19 +3052,19 @@ State 197
     pIdentifier      go to state 56
     arrayIdentifier  go to state 57
     identifier       go to state 58
-    expr             go to state 81
-    cond             go to state 203
+    expr             go to state 88
+    cond             go to state 206
     addExpr          go to state 60
     mulExpr          go to state 61
     unaryExpr        go to state 62
     primaryExpr      go to state 63
-    LOrExpr          go to state 83
-    LAndExpr         go to state 84
-    eqExpr           go to state 85
-    relExpr          go to state 86
+    LOrExpr          go to state 79
+    LAndExpr         go to state 80
+    eqExpr           go to state 81
+    relExpr          go to state 82
 
 
-State 198
+State 201
 
    51 blockLBRACE: LBRACE .
    57 stmt_: LBRACE . blockItems RBRACE
@@ -3075,16 +3074,16 @@ State 198
     T_BOOL      shift, and go to state 3
     T_VOID      shift, and go to state 4
     ADDR        shift, and go to state 43
-    SEMICOLON   shift, and go to state 136
+    SEMICOLON   shift, and go to state 139
     LPAREN      shift, and go to state 44
-    LBRACE      shift, and go to state 137
+    LBRACE      shift, and go to state 140
     CONST       shift, and go to state 5
-    IF_         shift, and go to state 138
-    WHILE_      shift, and go to state 139
-    FOR_        shift, and go to state 140
-    BREAK       shift, and go to state 141
-    CONTINUE    shift, and go to state 142
-    RETURN      shift, and go to state 143
+    IF_         shift, and go to state 141
+    WHILE_      shift, and go to state 142
+    FOR_        shift, and go to state 143
+    BREAK       shift, and go to state 144
+    CONTINUE    shift, and go to state 145
+    RETURN      shift, and go to state 146
     PLUS        shift, and go to state 45
     MINUS       shift, and go to state 46
     MUL         shift, and go to state 47
@@ -3120,56 +3119,56 @@ State 198
     BOOL        [reduce using rule 51 (blockLBRACE)]
     STRING      [reduce using rule 51 (blockLBRACE)]
 
-    basicType        go to state 144
+    basicType        go to state 147
     literalConst     go to state 54
     compIdentifier   go to state 55
     pIdentifier      go to state 56
     arrayIdentifier  go to state 57
     identifier       go to state 58
-    decl             go to state 145
+    decl             go to state 148
     constDecl        go to state 9
     varDecl          go to state 10
-    block            go to state 146
-    blockLBRACE      go to state 147
-    blockItems       go to state 204
-    blockItem        go to state 149
-    stmt             go to state 150
-    IF               go to state 151
-    WHILE            go to state 152
-    FOR              go to state 153
-    expr             go to state 154
+    block            go to state 149
+    blockLBRACE      go to state 150
+    blockItems       go to state 207
+    blockItem        go to state 152
+    stmt             go to state 153
+    IF               go to state 154
+    WHILE            go to state 155
+    FOR              go to state 156
+    expr             go to state 157
     addExpr          go to state 60
     mulExpr          go to state 61
     unaryExpr        go to state 62
     primaryExpr      go to state 63
 
 
-State 199
+State 202
 
    62 stmt: IF LPAREN cond RPAREN stmt_ . ELSE stmt_
    63     | IF LPAREN cond RPAREN stmt_ .
 
-    ELSE  shift, and go to state 205
+    ELSE  shift, and go to state 208
 
     ELSE      [reduce using rule 63 (stmt)]
     $default  reduce using rule 63 (stmt)
 
 
-State 200
+State 203
 
    58 stmt_: stmt .
 
     $default  reduce using rule 58 (stmt_)
 
 
-State 201
+State 204
 
    64 stmt: WHILE LPAREN cond RPAREN stmt_ .
 
     $default  reduce using rule 64 (stmt)
 
 
-State 202
+State 205
 
    65 stmt: FOR LPAREN basicType varDefs SEMICOLON . cond SEMICOLON expr RPAREN stmt_
 
@@ -3190,26 +3189,26 @@ State 202
     pIdentifier      go to state 56
     arrayIdentifier  go to state 57
     identifier       go to state 58
-    expr             go to state 81
-    cond             go to state 206
+    expr             go to state 88
+    cond             go to state 209
     addExpr          go to state 60
     mulExpr          go to state 61
     unaryExpr        go to state 62
     primaryExpr      go to state 63
-    LOrExpr          go to state 83
-    LAndExpr         go to state 84
-    eqExpr           go to state 85
-    relExpr          go to state 86
+    LOrExpr          go to state 79
+    LAndExpr         go to state 80
+    eqExpr           go to state 81
+    relExpr          go to state 82
 
 
-State 203
+State 206
 
    66 stmt: FOR LPAREN expr SEMICOLON cond . SEMICOLON expr RPAREN stmt_
 
-    SEMICOLON  shift, and go to state 207
+    SEMICOLON  shift, and go to state 210
 
 
-State 204
+State 207
 
    54 blockItems: blockItems . blockItem
    57 stmt_: LBRACE blockItems . RBRACE
@@ -3219,17 +3218,17 @@ State 204
     T_BOOL      shift, and go to state 3
     T_VOID      shift, and go to state 4
     ADDR        shift, and go to state 43
-    SEMICOLON   shift, and go to state 136
+    SEMICOLON   shift, and go to state 139
     LPAREN      shift, and go to state 44
-    LBRACE      shift, and go to state 137
-    RBRACE      shift, and go to state 208
+    LBRACE      shift, and go to state 140
+    RBRACE      shift, and go to state 211
     CONST       shift, and go to state 5
-    IF_         shift, and go to state 138
-    WHILE_      shift, and go to state 139
-    FOR_        shift, and go to state 140
-    BREAK       shift, and go to state 141
-    CONTINUE    shift, and go to state 142
-    RETURN      shift, and go to state 143
+    IF_         shift, and go to state 141
+    WHILE_      shift, and go to state 142
+    FOR_        shift, and go to state 143
+    BREAK       shift, and go to state 144
+    CONTINUE    shift, and go to state 145
+    RETURN      shift, and go to state 146
     PLUS        shift, and go to state 45
     MINUS       shift, and go to state 46
     MUL         shift, and go to state 47
@@ -3240,43 +3239,43 @@ State 204
     BOOL        shift, and go to state 52
     STRING      shift, and go to state 53
 
-    basicType        go to state 144
+    basicType        go to state 147
     literalConst     go to state 54
     compIdentifier   go to state 55
     pIdentifier      go to state 56
     arrayIdentifier  go to state 57
     identifier       go to state 58
-    decl             go to state 145
+    decl             go to state 148
     constDecl        go to state 9
     varDecl          go to state 10
-    block            go to state 146
-    blockLBRACE      go to state 147
-    blockItem        go to state 178
-    stmt             go to state 150
-    IF               go to state 151
-    WHILE            go to state 152
-    FOR              go to state 153
-    expr             go to state 154
+    block            go to state 149
+    blockLBRACE      go to state 150
+    blockItem        go to state 181
+    stmt             go to state 153
+    IF               go to state 154
+    WHILE            go to state 155
+    FOR              go to state 156
+    expr             go to state 157
     addExpr          go to state 60
     mulExpr          go to state 61
     unaryExpr        go to state 62
     primaryExpr      go to state 63
 
 
-State 205
+State 208
 
    62 stmt: IF LPAREN cond RPAREN stmt_ ELSE . stmt_
 
     ADDR        shift, and go to state 43
-    SEMICOLON   shift, and go to state 136
+    SEMICOLON   shift, and go to state 139
     LPAREN      shift, and go to state 44
-    LBRACE      shift, and go to state 198
-    IF_         shift, and go to state 138
-    WHILE_      shift, and go to state 139
-    FOR_        shift, and go to state 140
-    BREAK       shift, and go to state 141
-    CONTINUE    shift, and go to state 142
-    RETURN      shift, and go to state 143
+    LBRACE      shift, and go to state 201
+    IF_         shift, and go to state 141
+    WHILE_      shift, and go to state 142
+    FOR_        shift, and go to state 143
+    BREAK       shift, and go to state 144
+    CONTINUE    shift, and go to state 145
+    RETURN      shift, and go to state 146
     PLUS        shift, and go to state 45
     MINUS       shift, and go to state 46
     MUL         shift, and go to state 47
@@ -3292,28 +3291,28 @@ State 205
     pIdentifier      go to state 56
     arrayIdentifier  go to state 57
     identifier       go to state 58
-    block            go to state 146
-    blockLBRACE      go to state 147
-    stmt_            go to state 209
-    stmt             go to state 200
-    IF               go to state 151
-    WHILE            go to state 152
-    FOR              go to state 153
-    expr             go to state 154
+    block            go to state 149
+    blockLBRACE      go to state 150
+    stmt_            go to state 212
+    stmt             go to state 203
+    IF               go to state 154
+    WHILE            go to state 155
+    FOR              go to state 156
+    expr             go to state 157
     addExpr          go to state 60
     mulExpr          go to state 61
     unaryExpr        go to state 62
     primaryExpr      go to state 63
 
 
-State 206
+State 209
 
    65 stmt: FOR LPAREN basicType varDefs SEMICOLON cond . SEMICOLON expr RPAREN stmt_
 
-    SEMICOLON  shift, and go to state 210
+    SEMICOLON  shift, and go to state 213
 
 
-State 207
+State 210
 
    66 stmt: FOR LPAREN expr SEMICOLON cond SEMICOLON . expr RPAREN stmt_
 
@@ -3334,28 +3333,28 @@ State 207
     pIdentifier      go to state 56
     arrayIdentifier  go to state 57
     identifier       go to state 58
-    expr             go to state 211
+    expr             go to state 214
     addExpr          go to state 60
     mulExpr          go to state 61
     unaryExpr        go to state 62
     primaryExpr      go to state 63
 
 
-State 208
+State 211
 
    57 stmt_: LBRACE blockItems RBRACE .
 
     $default  reduce using rule 57 (stmt_)
 
 
-State 209
+State 212
 
    62 stmt: IF LPAREN cond RPAREN stmt_ ELSE stmt_ .
 
     $default  reduce using rule 62 (stmt)
 
 
-State 210
+State 213
 
    65 stmt: FOR LPAREN basicType varDefs SEMICOLON cond SEMICOLON . expr RPAREN stmt_
 
@@ -3376,64 +3375,7 @@ State 210
     pIdentifier      go to state 56
     arrayIdentifier  go to state 57
     identifier       go to state 58
-    expr             go to state 212
-    addExpr          go to state 60
-    mulExpr          go to state 61
-    unaryExpr        go to state 62
-    primaryExpr      go to state 63
-
-
-State 211
-
-   66 stmt: FOR LPAREN expr SEMICOLON cond SEMICOLON expr . RPAREN stmt_
-
-    RPAREN  shift, and go to state 213
-
-
-State 212
-
-   65 stmt: FOR LPAREN basicType varDefs SEMICOLON cond SEMICOLON expr . RPAREN stmt_
-
-    RPAREN  shift, and go to state 214
-
-
-State 213
-
-   66 stmt: FOR LPAREN expr SEMICOLON cond SEMICOLON expr RPAREN . stmt_
-
-    ADDR        shift, and go to state 43
-    SEMICOLON   shift, and go to state 136
-    LPAREN      shift, and go to state 44
-    LBRACE      shift, and go to state 198
-    IF_         shift, and go to state 138
-    WHILE_      shift, and go to state 139
-    FOR_        shift, and go to state 140
-    BREAK       shift, and go to state 141
-    CONTINUE    shift, and go to state 142
-    RETURN      shift, and go to state 143
-    PLUS        shift, and go to state 45
-    MINUS       shift, and go to state 46
-    MUL         shift, and go to state 47
-    NOT         shift, and go to state 48
-    IDENTIFIER  shift, and go to state 49
-    INTEGER     shift, and go to state 50
-    CHAR        shift, and go to state 51
-    BOOL        shift, and go to state 52
-    STRING      shift, and go to state 53
-
-    literalConst     go to state 54
-    compIdentifier   go to state 55
-    pIdentifier      go to state 56
-    arrayIdentifier  go to state 57
-    identifier       go to state 58
-    block            go to state 146
-    blockLBRACE      go to state 147
-    stmt_            go to state 215
-    stmt             go to state 200
-    IF               go to state 151
-    WHILE            go to state 152
-    FOR              go to state 153
-    expr             go to state 154
+    expr             go to state 215
     addExpr          go to state 60
     mulExpr          go to state 61
     unaryExpr        go to state 62
@@ -3442,18 +3384,32 @@ State 213
 
 State 214
 
-   65 stmt: FOR LPAREN basicType varDefs SEMICOLON cond SEMICOLON expr RPAREN . stmt_
+   66 stmt: FOR LPAREN expr SEMICOLON cond SEMICOLON expr . RPAREN stmt_
+
+    RPAREN  shift, and go to state 216
+
+
+State 215
+
+   65 stmt: FOR LPAREN basicType varDefs SEMICOLON cond SEMICOLON expr . RPAREN stmt_
+
+    RPAREN  shift, and go to state 217
+
+
+State 216
+
+   66 stmt: FOR LPAREN expr SEMICOLON cond SEMICOLON expr RPAREN . stmt_
 
     ADDR        shift, and go to state 43
-    SEMICOLON   shift, and go to state 136
+    SEMICOLON   shift, and go to state 139
     LPAREN      shift, and go to state 44
-    LBRACE      shift, and go to state 198
-    IF_         shift, and go to state 138
-    WHILE_      shift, and go to state 139
-    FOR_        shift, and go to state 140
-    BREAK       shift, and go to state 141
-    CONTINUE    shift, and go to state 142
-    RETURN      shift, and go to state 143
+    LBRACE      shift, and go to state 201
+    IF_         shift, and go to state 141
+    WHILE_      shift, and go to state 142
+    FOR_        shift, and go to state 143
+    BREAK       shift, and go to state 144
+    CONTINUE    shift, and go to state 145
+    RETURN      shift, and go to state 146
     PLUS        shift, and go to state 45
     MINUS       shift, and go to state 46
     MUL         shift, and go to state 47
@@ -3469,28 +3425,71 @@ State 214
     pIdentifier      go to state 56
     arrayIdentifier  go to state 57
     identifier       go to state 58
-    block            go to state 146
-    blockLBRACE      go to state 147
-    stmt_            go to state 216
-    stmt             go to state 200
-    IF               go to state 151
-    WHILE            go to state 152
-    FOR              go to state 153
-    expr             go to state 154
+    block            go to state 149
+    blockLBRACE      go to state 150
+    stmt_            go to state 218
+    stmt             go to state 203
+    IF               go to state 154
+    WHILE            go to state 155
+    FOR              go to state 156
+    expr             go to state 157
     addExpr          go to state 60
     mulExpr          go to state 61
     unaryExpr        go to state 62
     primaryExpr      go to state 63
 
 
-State 215
+State 217
+
+   65 stmt: FOR LPAREN basicType varDefs SEMICOLON cond SEMICOLON expr RPAREN . stmt_
+
+    ADDR        shift, and go to state 43
+    SEMICOLON   shift, and go to state 139
+    LPAREN      shift, and go to state 44
+    LBRACE      shift, and go to state 201
+    IF_         shift, and go to state 141
+    WHILE_      shift, and go to state 142
+    FOR_        shift, and go to state 143
+    BREAK       shift, and go to state 144
+    CONTINUE    shift, and go to state 145
+    RETURN      shift, and go to state 146
+    PLUS        shift, and go to state 45
+    MINUS       shift, and go to state 46
+    MUL         shift, and go to state 47
+    NOT         shift, and go to state 48
+    IDENTIFIER  shift, and go to state 49
+    INTEGER     shift, and go to state 50
+    CHAR        shift, and go to state 51
+    BOOL        shift, and go to state 52
+    STRING      shift, and go to state 53
+
+    literalConst     go to state 54
+    compIdentifier   go to state 55
+    pIdentifier      go to state 56
+    arrayIdentifier  go to state 57
+    identifier       go to state 58
+    block            go to state 149
+    blockLBRACE      go to state 150
+    stmt_            go to state 219
+    stmt             go to state 203
+    IF               go to state 154
+    WHILE            go to state 155
+    FOR              go to state 156
+    expr             go to state 157
+    addExpr          go to state 60
+    mulExpr          go to state 61
+    unaryExpr        go to state 62
+    primaryExpr      go to state 63
+
+
+State 218
 
    66 stmt: FOR LPAREN expr SEMICOLON cond SEMICOLON expr RPAREN stmt_ .
 
     $default  reduce using rule 66 (stmt)
 
 
-State 216
+State 219
 
    65 stmt: FOR LPAREN basicType varDefs SEMICOLON cond SEMICOLON expr RPAREN stmt_ .
 

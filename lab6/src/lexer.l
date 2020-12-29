@@ -16,7 +16,7 @@ EOL	(\r\n|\r|\n)
 WHILTESPACE [[:blank:]]
 
 OCTINT 0[0-7]+
-DECINT -?[0-9]+
+DECINT [0-9]+
 HEXINT 0[Xx][0-9a-fA-F]+
 
 BOOL (true)|(false)

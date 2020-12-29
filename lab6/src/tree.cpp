@@ -266,7 +266,9 @@ void TreeNode::typeCheck() {
         }
         else if (optype == OP_NOT || optype == OP_AND || optype == OP_OR) {
             // 二元运算符，输入bool，输出bool，!,&&,||
-            if (this->child->type->type != this->child->sibling->type->type || this->child->type->type != VALUE_BOOL) {
+            if (this->child->type->type != VALUE_BOOL 
+                || (optype != OP_NOT 
+                && this->child->type->type != this->child->sibling->type->type)) {
                 cout << "Wrong type: need <bool>, got <" << child->type->getTypeInfo()
                      << "> and <" << child->sibling->type->getTypeInfo()
                      << ">, operator is " << opType2String(optype) << ", at line " << lineno << endl;
@@ -381,8 +383,7 @@ void TreeNode::genCode() {
                 if (p->nodeType == NODE_OP) {
                     p->child->sibling->genCode();
                     // 这里也很蠢，可以通过三地址码优化一下
-                    cout << "\tmovl\t(%esp), %edx" << endl
-                         << "\tmovl\t%edx, " << LocalVarList[p->child->var_scope + p->child->var_name] << "(%ebp)" << endl;
+                    cout << "\tmovl\t%eax, " << LocalVarList[p->child->var_scope + p->child->var_name] << "(%ebp)" << endl;
                 }
                 p = p->sibling;
             }
@@ -420,6 +421,7 @@ void TreeNode::genCode() {
         case STMT_FOR:
             get_label();
             cycleStack[++cycleStackTop] = this;
+            cout << label.begin_label << ":" << endl;
             this->child->genCode();
             cout << label.next_label << ":" << endl;  
             this->child->sibling->genCode();
@@ -557,25 +559,27 @@ void TreeNode::genCode() {
         case OP_NOT:
             get_label();
             p->genCode();
-            cout << "\ttestl\t%eax, $eax" << endl
-                 << "\tsete\t%al" << endl;
+            // cout << "\tandl\t%eax, $eax" << endl
+            //      << "\tsete\t%al" << endl;
             break;
         case OP_AND:
             get_label();
             p->genCode();
             cout << "\tpushl\t%eax" << endl;
+            cout << child->label.true_label << ":" << endl;
             p->sibling->genCode();
             cout << "\tpopl\t%ebx" << endl
-                 << "\ttestl\t%eax, %ebx" << endl
+                 << "\tandl\t%eax, %ebx" << endl
                  << "\tsetne\t%al" << endl;
             break;
         case OP_OR:
             get_label();
             p->genCode();
             cout << "\tpushl\t%eax" << endl;
+            cout << child->label.false_label << ":" << endl;
             p->sibling->genCode();
             cout << "\tpopl\t%ebx" << endl
-                 << "\torl\t%eax, %ebx" << endl
+                 << "\torb\t%al, %bl" << endl
                  << "\tsetne\t%al" << endl;
             break;
         case OP_ADDASSIGN:
@@ -605,6 +609,7 @@ void TreeNode::genCode() {
             p->sibling->genCode();
             cout << "\tmovl\t%eax, %ebx" << varCode << endl
                  << "\tmovl\t" << varCode << ", %eax" << endl
+                 << "\tcltd" << endl
                  << "\tidivl\t%ebx" << endl
                  << "\tmovl\t%eax, " << varCode << endl;
             break;
@@ -653,19 +658,21 @@ void TreeNode::genCode() {
             cout << "\timull\t%ebx, %eax" << endl;
             break;
         case OP_DIV:
-            p->sibling->genCode();
-            cout << "\tpushl\t%eax" << endl;
             p->genCode();
+            cout << "\tpushl\t%eax" << endl;
+            p->sibling->genCode();
             cout << "\tmovl\t%eax, %ebx" << endl
                  << "\tpopl\t%eax" << endl
+                 << "\tcltd" << endl
                  << "\tidivl\t%ebx" << endl;
             break;
         case OP_MOD:
-            p->sibling->genCode();
-            cout << "\tpushl\t%eax" << endl;
             p->genCode();
+            cout << "\tpushl\t%eax" << endl;
+            p->sibling->genCode();
             cout << "\tmovl\t%eax, %ebx" << endl
                  << "\tpopl\t%eax" << endl
+                 << "\tcltd" << endl
                  << "\tidivl\t%ebx" << endl
                  << "\tmovl\t%edx, %eax" << endl;
             break;

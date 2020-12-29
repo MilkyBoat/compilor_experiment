@@ -52,7 +52,7 @@ asmc:
 	qemu-i386 asmTest.out
 
 st: 
-	./main.out test/1/20_expr_or.c > asmTest.s
+	./main.out test/1/22_expr_not.c > asmTest.s
 	gcc asmTest.s -m32 -o asmTest.out
 	qemu-i386 asmTest.out
 

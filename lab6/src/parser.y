@@ -92,7 +92,7 @@ pIdentifier
 	$$ = $2; 
 	$$->pointLevel--;
 	#ifdef POINT_DEBUG
-		cout << "$ pIdentifier : " << $$->var_name 
+		cout << "# $ pIdentifier : " << $$->var_name 
 			 << ", pointlevel : " << $$->pointLevel << endl;
 	#endif
   }
@@ -175,7 +175,7 @@ declIdentifier
 	$$ = $1;
 	$$->var_scope = presentScope;
 	#ifdef ID_REDUCE_DEBUG
-		cout<<"$ reduce declIdentifier : "<<$$->var_name<<", at scope :"<<presentScope<<endl;
+		cout<<"# $ reduce declIdentifier : "<<$$->var_name<<", at scope :"<<presentScope<<endl;
 	#endif
 	if (idList.count(make_pair($$->var_name, $$->var_scope)) != 0) {
 		string t = "Redeclared identifier : " + $$->var_name;
@@ -251,7 +251,7 @@ varDecl
 	  p = p->sibling;
   }
   #ifdef DECL_DEBUG
-	cout << "$ reduce varDecl type = " << $1->type->getTypeInfo() << endl;
+	cout << "# $ reduce varDecl type = " << $1->type->getTypeInfo() << endl;
 	// $$->printAST();
   #endif
 }
@@ -379,7 +379,7 @@ stmt
 	$$->addChild($7);
 	scopePop();
 	#ifdef IFELSE_DEBUG
-		cout << "$ reduce IF-ELSE at scope : " << presentScope << ", at line " << lineno << endl;
+		cout << "# $ reduce IF-ELSE at scope : " << presentScope << ", at line " << lineno << endl;
 	#endif
   }
 | IF LPAREN cond RPAREN stmt_ {
@@ -389,7 +389,7 @@ stmt
 	$$->addChild($5);
 	scopePop();
 	#ifdef IF_DEBUG
-		cout << "$ reduce IF at scope : " << presentScope << ", at line " << lineno << endl;
+		cout << "% # $ reduce IF at scope : " << presentScope << ", at line " << lineno << endl;
 	#endif
   }
 | WHILE LPAREN cond RPAREN stmt_ {
@@ -400,7 +400,7 @@ stmt
 	inCycle = false;
 	scopePop();
 	#ifdef WHILE
-		cout << "$ reduce WHILE at scope : " << presentScope << ", at line " << lineno << endl;
+		cout << "# $ reduce WHILE at scope : " << presentScope << ", at line " << lineno << endl;
 	#endif
   }
 | FOR LPAREN basicType varDefs SEMICOLON cond SEMICOLON expr RPAREN stmt_ {
@@ -462,8 +462,8 @@ expr
 	$$->addChild($1);
 	$$->addChild($3);
 	#ifdef ASSIGN_DEBUG
-		cout << "$ reduce ASSIGN at scope : " << presentScope << ", at line " << lineno << endl;
-		$$->printAST();
+		cout << "# $ reduce ASSIGN at scope : " << presentScope << ", at line " << lineno << endl;
+		// $$->printAST();
 	#endif
   }
 | compIdentifier PLUSASSIGN expr {
@@ -513,22 +513,24 @@ mulExpr
 // 一元表达式
 unaryExpr
 : primaryExpr {$$ = $1;}
-| PLUS expr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_POS; $$->addChild($2);}
-| MINUS expr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_NAG; $$->addChild($2);}
 | NOT cond {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_NOT; $$->addChild($2);}
+| PLUS primaryExpr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_POS; $$->addChild($2);}
+| MINUS primaryExpr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_NAG; $$->addChild($2);}
 | pIdentifier INC {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_INC; $$->addChild($1);}
 | pIdentifier DEC {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_DEC; $$->addChild($1);}
 ;
 
 // 基本表达式
 primaryExpr
-: LPAREN expr RPAREN {$$ = $2;}
+: literalConst {$$ = $1;}
+| LPAREN expr RPAREN {$$ = $2;}
+| LPAREN cond RPAREN {$$ = $2;}
 | pIdentifier LPAREN funcRParams RPAREN {
 	$$ = new TreeNode(lineno, NODE_FUNCALL);
 	$$->addChild($1);
 	$$->addChild($3);
 	#ifdef FUNCALL_DEBUG
-		cout << "$ reduce function call at scope : " << presentScope << ", at line " << lineno << endl;
+		cout << "# $ reduce function call at scope : " << presentScope << ", at line " << lineno << endl;
 	#endif
   }
 | pIdentifier LPAREN RPAREN {
@@ -536,11 +538,10 @@ primaryExpr
 	$$->addChild($1);
 	$$->addChild(new TreeNode(lineno, NODE_VARLIST));
 	#ifdef FUNCALL_DEBUG
-		cout << "$ reduce function call at scope : " << presentScope << ", at line " << lineno << endl;
+		cout << "# $ reduce function call at scope : " << presentScope << ", at line " << lineno << endl;
 	#endif
   }
 | compIdentifier {$$ = new TreeNode(lineno, NODE_EXPR); $$->addChild($1);}
-| literalConst {$$ = $1;}
 ;
 
 // 函数实参列表
@@ -564,8 +565,8 @@ LAndExpr
 // 相等关系
 eqExpr
 : relExpr {$$ = $1;}
-| eqExpr EQ relExpr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_EQ; $$->addChild($1); $$->addChild($3);}
-| eqExpr NEQ relExpr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_NEQ; $$->addChild($1); $$->addChild($3);}
+| relExpr EQ eqExpr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_EQ; $$->addChild($1); $$->addChild($3);}
+| relExpr NEQ eqExpr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_NEQ; $$->addChild($1); $$->addChild($3);}
 ;
 
 // 相对关系
