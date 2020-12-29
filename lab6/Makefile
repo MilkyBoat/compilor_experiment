@@ -2,7 +2,7 @@ CC := g++
 CFLAGS := -Wall -Wextra -std=c++11  # without debug
 TARGET := ./main.out
 
-.PHONY: all clean main run lex yacc test debug link testscope asm asmc nasm example-code out
+.PHONY: all clean main run lex yacc test debug link testscope asm asmc nasm example-code out mytest
 
 all: complier
 
@@ -20,19 +20,19 @@ main: src/pch.h.gch
 
 complier: lex yacc main
 
-run: 
+run: complier
 	./test.out
 
-l1:
+l1: complier
 	./test.out --level 1
 
-l2:
+l2: complier
 	./test.out --level 2
 
-l3:
+l3: complier
 	./test.out --level 3
 
-l4:
+l4: complier
 	./test.out --level 4
 
 diffcheck:
@@ -41,13 +41,18 @@ diffcheck:
 noerrlog:
 	./test.out --nolog
 
-type:
+type: complier
 	./test.out --type
 
 asm:
 	gcc -S asmTest.c -m32 -o asmTest.s
 
 asmc:
+	gcc asmTest.s -m32 -o asmTest.out
+	qemu-i386 asmTest.out
+
+st: 
+	./main.out test/1/20_expr_or.c > asmTest.s
 	gcc asmTest.s -m32 -o asmTest.out
 	qemu-i386 asmTest.out
 

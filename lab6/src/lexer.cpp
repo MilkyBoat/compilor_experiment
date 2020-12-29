@@ -1124,8 +1124,8 @@ YY_RULE_SETUP
 {
     TreeNode* node = new TreeNode(lineno, NODE_CONST);
     node->type = TYPE_CHAR;
+    // 支持转义字符
     if (yytext[1] == '\\') {
-        // 支持转义字符
         switch (yytext[2]) {
         case 'a':
             node->ch_val = 7;

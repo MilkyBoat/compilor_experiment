@@ -251,7 +251,7 @@ varDecl
 	  p = p->sibling;
   }
   #ifdef DECL_DEBUG
-	cout << "$ reduce varDecl : " << $1->type->getTypeInfo() << endl;
+	cout << "$ reduce varDecl type = " << $1->type->getTypeInfo() << endl;
 	// $$->printAST();
   #endif
 }
@@ -371,41 +371,6 @@ stmt
 : SEMICOLON {$$ = new TreeNode(lineno, NODE_STMT); $$->stype = STMT_SKIP;}
 | expr SEMICOLON {$$ = $1;}
 | block {$$ = $1;}
-| compIdentifier ASSIGN expr SEMICOLON {
-	$$ = new TreeNode(lineno, NODE_OP);
-	$$->optype = OP_ASSIGN;
-	$$->addChild($1);
-	$$->addChild($3);
-	#ifdef ASSIGN_DEBUG
-		cout << "$ reduce ASSIGN at scope : " << presentScope << ", at line " << lineno << endl;
-		$$->printAST();
-	#endif
-  }
-| compIdentifier PLUSASSIGN expr SEMICOLON {
-	$$ = new TreeNode(lineno, NODE_OP);
-	$$->optype = OP_ADDASSIGN;
-	$$->addChild($1);
-	$$->addChild($3);
-  }
-| compIdentifier MINUSASSIGN expr SEMICOLON {
-	$$ = new TreeNode(lineno, NODE_OP);
-	$$->optype = OP_SUBASSIGN;
-	$$->addChild($1);
-	$$->addChild($3);
-  }
-| compIdentifier MULASSIGN expr SEMICOLON {
-	$$ = new TreeNode(lineno, NODE_OP);
-	$$->optype = OP_MULASSIGN;
-	$$->addChild($1);
-	$$->addChild($3);
-  }
-| compIdentifier DIVASSIGN expr SEMICOLON {
-	$$ = new TreeNode(lineno, NODE_OP);
-	$$->optype = OP_DIVASSIGN;
-	$$->addChild($1);
-	$$->addChild($3);
-  }
-
 | IF LPAREN cond RPAREN stmt_ ELSE stmt_ {
 	$$ = new TreeNode(lineno, NODE_STMT);
 	$$->stype = STMT_IFELSE;
@@ -490,25 +455,59 @@ FOR : FOR_ {inCycle = true; scopePush();};
 // ---------------- 表达式 -------------------
 
 expr
-: andExpr {$$ = $1;}
+: addExpr {$$ = $1;}
+| compIdentifier ASSIGN expr {
+	$$ = new TreeNode(lineno, NODE_OP);
+	$$->optype = OP_ASSIGN;
+	$$->addChild($1);
+	$$->addChild($3);
+	#ifdef ASSIGN_DEBUG
+		cout << "$ reduce ASSIGN at scope : " << presentScope << ", at line " << lineno << endl;
+		$$->printAST();
+	#endif
+  }
+| compIdentifier PLUSASSIGN expr {
+	$$ = new TreeNode(lineno, NODE_OP);
+	$$->optype = OP_ADDASSIGN;
+	$$->addChild($1);
+	$$->addChild($3);
+  }
+| compIdentifier MINUSASSIGN expr {
+	$$ = new TreeNode(lineno, NODE_OP);
+	$$->optype = OP_SUBASSIGN;
+	$$->addChild($1);
+	$$->addChild($3);
+  }
+| compIdentifier MULASSIGN expr {
+	$$ = new TreeNode(lineno, NODE_OP);
+	$$->optype = OP_MULASSIGN;
+	$$->addChild($1);
+	$$->addChild($3);
+  }
+| compIdentifier DIVASSIGN expr {
+	$$ = new TreeNode(lineno, NODE_OP);
+	$$->optype = OP_DIVASSIGN;
+	$$->addChild($1);
+	$$->addChild($3);
+  }
 ;
 
 cond
 : LOrExpr {$$ = $1;}
 ;
 
-andExpr
+addExpr
 : mulExpr {$$ = $1;}
-| mulExpr PLUS andExpr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_ADD; $$->addChild($1); $$->addChild($3);}
-| mulExpr MINUS andExpr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_SUB; $$->addChild($1); $$->addChild($3);}
+| addExpr PLUS mulExpr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_ADD; $$->addChild($1); $$->addChild($3);}
+| addExpr MINUS mulExpr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_SUB; $$->addChild($1); $$->addChild($3);}
 ;
 
 // factor
 mulExpr
 : unaryExpr {$$ = $1;}
-| unaryExpr MUL mulExpr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_MUL; $$->addChild($1); $$->addChild($3);}
-| unaryExpr DIV mulExpr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_DIV; $$->addChild($1); $$->addChild($3);}
-| unaryExpr MOD mulExpr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_MOD; $$->addChild($1); $$->addChild($3);}
+| mulExpr MUL unaryExpr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_MUL; $$->addChild($1); $$->addChild($3);}
+| mulExpr DIV unaryExpr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_DIV; $$->addChild($1); $$->addChild($3);}
+| mulExpr MOD unaryExpr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_MOD; $$->addChild($1); $$->addChild($3);}
 ;
 
 // 一元表达式
@@ -565,17 +564,17 @@ LAndExpr
 // 相等关系
 eqExpr
 : relExpr {$$ = $1;}
-| relExpr EQ eqExpr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_EQ; $$->addChild($1); $$->addChild($3);}
-| relExpr NEQ eqExpr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_NEQ; $$->addChild($1); $$->addChild($3);}
+| eqExpr EQ relExpr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_EQ; $$->addChild($1); $$->addChild($3);}
+| eqExpr NEQ relExpr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_NEQ; $$->addChild($1); $$->addChild($3);}
 ;
 
 // 相对关系
 relExpr
 : expr {$$ = $1;}
-| expr GRA relExpr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_GRA; $$->addChild($1); $$->addChild($3);}
-| expr LES relExpr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_LES; $$->addChild($1); $$->addChild($3);}
-| expr GRAEQ relExpr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_GRAEQ; $$->addChild($1); $$->addChild($3);}
-| expr LESEQ relExpr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_LESEQ; $$->addChild($1); $$->addChild($3);}
+| relExpr GRA expr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_GRA; $$->addChild($1); $$->addChild($3);}
+| relExpr LES expr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_LES; $$->addChild($1); $$->addChild($3);}
+| relExpr GRAEQ expr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_GRAEQ; $$->addChild($1); $$->addChild($3);}
+| relExpr LESEQ expr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_LESEQ; $$->addChild($1); $$->addChild($3);}
 ;
 
 %%

@@ -56,6 +56,7 @@ int Type::getSize() {
     case VALUE_BOOL:
     case VALUE_INT:
     case VALUE_CHAR:
+    case VALUE_STRING:
         return 4;
     case VALUE_ARRAY:
         this->type = elementType;

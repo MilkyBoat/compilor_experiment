@@ -1,5 +1,4 @@
 #include "tree.h"
-using namespace std;
 
 // -------------------------------------------------------------
 // ------------------------- 常量字符串 -------------------------
@@ -13,20 +12,11 @@ string _section = ".note.GNU-stack,\"\",@progbits";
 // --------------------------------------------------------------
 
 string operator + (string &content, int number) {
-	string temp = "";
-	char t = 0;
-	while (true) {
-		t = number % 10 + '0';
-		temp = t + temp;
-		number /= 10;
-		if (number == 0) {
-			return content + temp;
-		}
-	}
+    return content + to_string(number);
 }
 
 string& operator += (string &content, int number) {
-	return content = content + number;
+	return content = content + to_string(number);
 }
 
 // ------------------------------------------------------------
@@ -34,15 +24,9 @@ string& operator += (string &content, int number) {
 // ------------------------------------------------------------
 
 // multimap <标识符名称， 作用域> 变量名列表
-multimap<string, string> idNameList = {
-	{"scanf", "1"},
-	{"printf", "1"}
-};
+multimap<string, string> idNameList;
 // map <<标识符名称， 作用域>, 结点指针> 变量列表
-map<pair<string, string>, TreeNode*> idList = {
-	{make_pair("scanf", "1"), nodeScanf},
-	{make_pair("printf", "1"), nodePrintf}
-};
+map<pair<string, string>, TreeNode *> idList;
 
 // map <字符串， 标签序列号> 字符串表
 map<string, int> strList;
@@ -58,7 +42,7 @@ TreeNode *pFunction;
 
 // 循环体栈，为continue与break配对使用
 TreeNode *cycleStack[10];
-int cycleStackTop = 0;
+int cycleStackTop = -1;
 
 // ------------------------------------------------------------
 // ------------------------ 代码 ------------------------------
@@ -183,8 +167,8 @@ void TreeNode::typeCheck() {
         case STMT_IF:
         case STMT_IFELSE:
         case STMT_WHILE:
-            if (child->type != TYPE_BOOL) {
-                if (child->type == TYPE_INT) {
+            if (child->type->type != VALUE_BOOL) {
+                if (child->type->type == VALUE_INT) {
                     // 强制类型转换，添加一个"!=0"运算过程
                     TreeNode *eq = new TreeNode(child->lineno, NODE_OP);
                     eq->sibling = child->sibling;
@@ -207,8 +191,8 @@ void TreeNode::typeCheck() {
             }
             break;
         case STMT_FOR:
-            if (child->type != TYPE_BOOL) {
-                if (child->sibling->type == TYPE_INT) {
+            if (child->sibling->type->type != VALUE_BOOL) {
+                if (child->sibling->type->type == VALUE_INT) {
                     cout << "Type Cast from <int> to <bool> because of a \"for\" statement, at line "
                          << child->sibling->lineno << endl;
                 }
@@ -325,6 +309,9 @@ void TreeNode::typeCheck() {
 
 void TreeNode::genCode() {
     TreeNode *p = child;
+    TreeNode **q;
+    int N = 0, n = 1, pSize = 0;
+    string varCode = "";
     switch (nodeType)
     {
     case NODE_PROG:
@@ -340,10 +327,33 @@ void TreeNode::genCode() {
         cout << "\t.ident\t" << _ident << endl
              << "\t.section\t" << _section << endl;
         break;
+    case NODE_FUNCALL:
+        // 反转链表
+        N = p->sibling->getChildNum();
+#ifdef childNumdebug
+        cout << "# ChildNum = " << N << endl;
+#endif
+        q = new TreeNode *[N];
+        p = p->sibling->child;
+        while (p) {
+            q[N - n++] = p;
+            p = p->sibling;
+        }
+        // 从右向左压栈
+        for (int i = 0; i < N; i++) {
+            q[i]->genCode();
+            cout << "\tpushl\t%eax" << endl;
+            pSize += this->child->type->paramType[i]->getSize();
+        }
+        // call和参数栈清理
+        cout << "\tcall\t" << child->var_name << endl
+             << "\taddl\t$" << pSize << ", %esp" << endl;
+        break;
     case NODE_STMT:
         switch (stype)
         {
         case STMT_FUNCDECL:
+            cycleStackTop = -1;
             pFunction = this;
             get_label();
             cout << "\t.globl\t" << p->sibling->var_name << endl
@@ -365,29 +375,70 @@ void TreeNode::genCode() {
             pFunction = nullptr;
             break;
         case STMT_DECL:
-            break;
         case STMT_CONSTDECL:
+            p = p->sibling->child;
+            while (p) {
+                if (p->nodeType == NODE_OP) {
+                    p->child->sibling->genCode();
+                    // 这里也很蠢，可以通过三地址码优化一下
+                    cout << "\tmovl\t(%esp), %edx" << endl
+                         << "\tmovl\t%edx, " << LocalVarList[p->child->var_scope + p->child->var_name] << "(%ebp)" << endl;
+                }
+                p = p->sibling;
+            }
             break;
         case STMT_IF:
+            get_label();
+            cout << label.begin_label << ":" << endl;
+            this->child->genCode();
+            cout << label.true_label << ":" << endl;
+            this->child->sibling->genCode();
+            cout << label.false_label << ":" << endl;
             break;
         case STMT_IFELSE:
+            get_label();
+            cout << label.begin_label << ":" << endl;
+            this->child->genCode();
+            cout << label.true_label << ":" << endl;
+            this->child->sibling->genCode();
+            cout << "\tjmp\t\t" << label.next_label << endl;
+            cout << label.false_label << ":" << endl;
+            this->child->sibling->sibling->genCode();
+            cout << label.next_label << ":" << endl;
             break;
         case STMT_WHILE:
-            cycleStack[cycleStackTop++] = this;
+            get_label();
+            cycleStack[++cycleStackTop] = this;
+            cout << label.next_label << ":" << endl;
+            this->child->genCode();
+            cout << label.true_label << ":" << endl;
+            this->child->sibling->genCode();
+            cout << "\tjmp\t\t" << label.next_label << endl;
+            cout << label.false_label << ":" << endl;
+            cycleStackTop--;
             break;
         case STMT_FOR:
-            cycleStack[cycleStackTop++] = this;
+            get_label();
+            cycleStack[++cycleStackTop] = this;
+            this->child->genCode();
+            cout << label.next_label << ":" << endl;  
+            this->child->sibling->genCode();
+            cout << label.true_label << ":" << endl;
+            this->child->sibling->sibling->sibling->genCode();
+            this->child->sibling->sibling->genCode();
+            cout << "\tjmp\t\t" << label.next_label << endl;
+            cout << label.false_label << ":" << endl; 
+            cycleStackTop--;
             break;
         case STMT_BREAK:
-            cout << "\tjmp\t\t" << cycleStack[cycleStackTop--]->label.false_label << endl;
+            cout << "\tjmp\t\t" << cycleStack[cycleStackTop]->label.false_label << endl;
             break;
         case STMT_CONTINUE:
-            cout << "\tjmp\t\t" << cycleStack[cycleStackTop--]->label.next_label << endl;
+            cout << "\tjmp\t\t" << cycleStack[cycleStackTop]->label.next_label << endl;
             break;
         case STMT_RETURN:
             if (p) {
                 p->genCode();
-                cout << "\tpopl\t%eax" << endl;
             }
             cout << "\tjmp\t\t" << pFunction->label.next_label << endl;
             break;
@@ -404,34 +455,223 @@ void TreeNode::genCode() {
     case NODE_EXPR:
         if (child->nodeType == NODE_VAR) {
             // 内存变量（全局/局部）
-            if (child->var_scope == "1") {
-                cout << "\tpushl\t" << child->var_name << endl;
+            string varCode = getVarNameCode(this->child);
+            if (child->pointLevel == 0)
+                cout << "\tmovl\t" << varCode << ", %eax" << endl;
+            else if (child->pointLevel < 0) { // &前缀的变量
+                assert(child->pointLevel == -1); // 只能一次&一次 TODO: 这个东西应该在类型检查的时候不允许连续取地址符号
+                cout << "\tleal\t" << varCode << ", %eax" << endl;
             }
             else {
-                // TODO: 有时间就优化一下，太愚蠢了
-                cout << "\tmovl\t" << LocalVarList[child->var_scope + child->var_name] << "(%ebp), %edx" << endl
-                     << "\tpushl\t%edx" << endl;
+                cout << "\tmovl\t" << varCode << ", %eax" << endl;
+                for (int i = 0; i < child->pointLevel; i++) {
+                    cout << "\tmovl\t(%eax), %eax" << endl;
+                }
             }
         }
         else {
             // 立即数、常量字符串
             if (child->type->type == VALUE_STRING) {
-                cout << "\tleal\t.LC" << strList[child->str_val] << ", %edx" << endl;
-                cout << "\tpushl\t%edx" << endl;
+                cout << "\tmovl\t$.LC" << strList[child->str_val] << ", %eax" << endl;
             }
             else {
-                cout << "\tpushl\t$" << child->getVal() << endl;
+                cout << "\tmovl\t$" << child->getVal() << ", %eax" << endl;
             }
         }
         break;
     case NODE_OP:
         switch (optype)
         {
+        case OP_EQ:
+            p->genCode();
+            cout << "\tpushl\t%eax" << endl;
+            p->sibling->genCode();
+            cout << "\tpopl\t%ebx" << endl
+                 << "\tcmpl\t%eax, %ebx" << endl
+                 << "\tsete\t%al" << endl;
+            if (label.true_label != "") {
+                cout << "\tje\t\t" << label.true_label << endl
+                     << "\tjmp\t\t" << label.false_label << endl;
+            }
+            break;
+        case OP_NEQ:
+            p->genCode();
+            cout << "\tpushl\t%eax" << endl;
+            p->sibling->genCode();
+            cout << "\tpopl\t%ebx" << endl
+                 << "\tcmpl\t%eax, %ebx" << endl
+                 << "\tsetne\t%al" << endl;
+            if (label.true_label != "") {
+                cout << "\tjne\t\t" << label.true_label << endl
+                     << "\tjmp\t\t" << label.false_label << endl;
+            }
+            break;
+        case OP_GRA:
+            p->genCode();
+            cout << "\tpushl\t%eax" << endl;
+            p->sibling->genCode();
+            cout << "\tpopl\t%ebx" << endl
+                 << "\tcmpl\t%eax, %ebx" << endl
+                 << "\tsetg\t%al" << endl;
+            if (label.true_label != "") {
+                cout << "\tjg\t\t" << label.true_label << endl
+                     << "\tjmp\t\t" << label.false_label << endl;
+            }
+            break;
+        case OP_LES:
+            p->genCode();
+            cout << "\tpushl\t%eax" << endl;
+            p->sibling->genCode();
+            cout << "\tpopl\t%ebx" << endl
+                 << "\tcmpl\t%eax, %ebx" << endl
+                 << "\tsetl\t%al" << endl;
+            if (label.true_label != "") {
+                cout << "\tjl\t\t" << label.true_label << endl
+                     << "\tjmp\t\t" << label.false_label << endl;
+            }
+            break;
+        case OP_GRAEQ:
+            p->genCode();
+            cout << "\tpushl\t%eax" << endl;
+            p->sibling->genCode();
+            cout << "\tpopl\t%ebx" << endl
+                 << "\tcmpl\t%eax, %ebx" << endl
+                 << "\tsetge\t%al" << endl;
+            if (label.true_label != "") {
+                cout << "\tjge\t\t" << label.true_label << endl
+                     << "\tjmp\t\t" << label.false_label << endl;
+            }
+            break;
+        case OP_LESEQ:
+            p->genCode();
+            cout << "\tpushl\t%eax" << endl;
+            p->sibling->genCode();
+            cout << "\tpopl\t%ebx" << endl
+                 << "\tcmpl\t%eax, %ebx" << endl
+                 << "\tsetle\t%al" << endl;
+            if (label.true_label != "") {
+                cout << "\tjle\t\t" << label.true_label << endl
+                     << "\tjmp\t\t" << label.false_label << endl;
+            }
+            break;
+        case OP_NOT:
+            get_label();
+            p->genCode();
+            cout << "\ttestl\t%eax, $eax" << endl
+                 << "\tsete\t%al" << endl;
+            break;
+        case OP_AND:
+            get_label();
+            p->genCode();
+            cout << "\tpushl\t%eax" << endl;
+            p->sibling->genCode();
+            cout << "\tpopl\t%ebx" << endl
+                 << "\ttestl\t%eax, %ebx" << endl
+                 << "\tsetne\t%al" << endl;
+            break;
+        case OP_OR:
+            get_label();
+            p->genCode();
+            cout << "\tpushl\t%eax" << endl;
+            p->sibling->genCode();
+            cout << "\tpopl\t%ebx" << endl
+                 << "\torl\t%eax, %ebx" << endl
+                 << "\tsetne\t%al" << endl;
+            break;
+        case OP_ADDASSIGN:
+            varCode = getVarNameCode(p);
+            p->sibling->genCode();
+            cout << "\tmovl\t" << varCode << ", %ebx" << endl
+                 << "\taddl\t%ebx, %eax" << endl
+                 << "\tmovl\t%eax, " << varCode << endl;
+            break;
+        case OP_SUBASSIGN:
+            varCode = getVarNameCode(p);
+            p->sibling->genCode();
+            cout << "\tmovl\t" << varCode << ", %ebx" << endl
+                 << "\tsubl\t%eax, %ebx" << endl
+                 << "\tmovl\t%ebx, %eax" << endl
+                 << "\tmovl\t%eax, " << varCode << endl;
+            break;
+        case OP_MULASSIGN:
+            varCode = getVarNameCode(p);
+            p->sibling->genCode();
+            cout << "\tmovl\t" << varCode << ", %ebx" << endl
+                 << "\timull\t%ebx, %eax" << endl
+                 << "\tmovl\t%eax, " << varCode << endl;
+            break;
+        case OP_DIVASSIGN:
+            varCode = getVarNameCode(p);
+            p->sibling->genCode();
+            cout << "\tmovl\t%eax, %ebx" << varCode << endl
+                 << "\tmovl\t" << varCode << ", %eax" << endl
+                 << "\tidivl\t%ebx" << endl
+                 << "\tmovl\t%eax, " << varCode << endl;
+            break;
+        case OP_DECLASSIGN:
+        case OP_ASSIGN:
+            p->sibling->genCode();
+            cout << "\tmovl\t%eax, " << getVarNameCode(p) << endl;
+            break;
+        case OP_INC:
+            varCode = getVarNameCode(p);
+            cout << "\tmovl\t" << varCode << ", %eax" << endl
+                 << "\tincl\t" << varCode << endl;
+            break;
+        case OP_DEC:
+            varCode = getVarNameCode(p);
+            cout << "\tmovl\t" << varCode << ", %eax" << endl
+                 << "\tdecl\t" << varCode << endl;
+            break;
         case OP_ADD:
+            p->genCode();
+            cout << "\tpushl\t%eax" << endl;
+            p->sibling->genCode();
+            cout << "\tpopl\t%ebx" << endl;
+            cout << "\taddl\t%ebx, %eax" << endl;
             break;
         case OP_SUB:
+            p->genCode();
+            cout << "\tpushl\t%eax" << endl;
+            p->sibling->genCode();
+            cout << "\tmovl\t%eax, %ebx" << endl
+                 << "\tpopl\t%eax" << endl
+                 << "\tsubl\t%ebx, %eax" << endl;
             break;
-        // TODO
+        case OP_POS:
+            p->genCode();
+            break;
+        case OP_NAG:
+            p->genCode();
+            cout << "\tnegl\t%eax" << endl;
+            break;
+        case OP_MUL:
+            p->genCode();
+            cout << "\tpushl\t%eax" << endl;
+            p->sibling->genCode();
+            cout << "\tpopl\t%ebx" << endl;
+            cout << "\timull\t%ebx, %eax" << endl;
+            break;
+        case OP_DIV:
+            p->sibling->genCode();
+            cout << "\tpushl\t%eax" << endl;
+            p->genCode();
+            cout << "\tmovl\t%eax, %ebx" << endl
+                 << "\tpopl\t%eax" << endl
+                 << "\tidivl\t%ebx" << endl;
+            break;
+        case OP_MOD:
+            p->sibling->genCode();
+            cout << "\tpushl\t%eax" << endl;
+            p->genCode();
+            cout << "\tmovl\t%eax, %ebx" << endl
+                 << "\tpopl\t%eax" << endl
+                 << "\tidivl\t%ebx" << endl
+                 << "\tmovl\t%edx, %eax" << endl;
+            break;
+        case OP_INDEX:
+            // TODO
+            break;
         default:
             break;
         }
@@ -455,8 +695,6 @@ void TreeNode::gen_var_decl() {
                 TreeNode* q = p->child->sibling->child;
                 // q为变量表语句，可能为标识符或者赋值声明运算符
                 while (q) {
-                    // 遍历常变量列表，指针类型视为4字节int
-                    int varsize = q->type->getSize();
                     if (!print_data) {
                         // 第一次遇到全局变量的时候输出
                         print_data = true;
@@ -464,33 +702,37 @@ void TreeNode::gen_var_decl() {
                             << "\t.data" << endl
                             << "\t.align\t4" << endl;
                     }
-                    cout << "\t.globl\t" << q->child->var_name << endl
-                            << "\t.type\t" << q->child->var_name << ", @object" << endl
-                            << "\t.size\t" << q->child->var_name << ", "
-                            // 指针类型视为4字节int
-                            << ((q->child->pointLevel == 0) ? varsize : 4) << endl;
-                    cout << q->child->var_name << ":" << endl;
+                    TreeNode *t = q;
+                    if (q->nodeType == NODE_OP && q->optype == OP_DECLASSIGN) {
+                        t = q->child;
+                    }
+                    // 遍历常变量列表，指针类型视为4字节int
+                    int varsize = ((t->pointLevel == 0) ? t->type->getSize() : 4);
+                    cout << "\t.globl\t" << t->var_name << endl
+                         << "\t.type\t" << t->var_name << ", @object" << endl
+                         << "\t.size\t" << t->var_name << ", " << varsize << endl
+                         << t->var_name << ":" << endl;
                     if (q->nodeType == NODE_OP && q->optype == OP_DECLASSIGN) {
                         // 声明时赋值
                         // 只处理字面量初始化值
-                        if (q->child->type->type != VALUE_ARRAY) {    // 单个值                    
-                            cout << "\t.long\t" << getVal() << endl;
+                        if (t->type->type != VALUE_ARRAY) {    // 单个值                    
+                            cout << "\t.long\t" << t->sibling->getVal() << endl;
                         }
                         else {    // 数组                    
-                            for (TreeNode *pe = q->child->sibling->child; pe != nullptr; pe = pe->sibling)
+                            for (TreeNode *pe = t->sibling->child; pe != nullptr; pe = pe->sibling)
                                 cout << "\t.long\t" << pe->getVal();
                         }
                     }
                     else {
                         // 声明时未赋值，默认初始化值为0
                         // 只处理字面量初始化值
-                        if (q->type->type != VALUE_ARRAY) { // 单个值
+                        if (t->type->type != VALUE_ARRAY) { // 单个值
                             cout << "\t.long\t0" << endl;
                         }
                         else {  // 数组
                             int size = 0;
-                            for (unsigned int i = 0; i < q->type->dim; i++)
-                                size += 4 * q->type->dimSize[i];
+                            for (unsigned int i = 0; i < t->type->dim; i++)
+                                size += 4 * t->type->dimSize[i];
                             while (size--)
                                 cout << "\t.long\t0";
                         }
@@ -506,7 +748,9 @@ void TreeNode::gen_var_decl() {
         LocalVarList.clear();
         stackSize = -12;
         int paramSize = 8;
-
+#ifdef varDeclDebug
+        cout << "# gen_var_decl in funcDecl init" << endl;
+#endif
         // 遍历参数定义列表
         TreeNode *p = child->sibling->sibling->child;
         while (p) {
@@ -515,26 +759,33 @@ void TreeNode::gen_var_decl() {
             paramSize += 4;
             p = p->sibling;
         }
-
+#ifdef varDeclDebug
+        cout << "# gen_var_decl in funcDecl param fin" << endl;
+#endif
         // 遍历代码段，查找函数内声明的局部变量
         p = child->sibling->sibling->sibling->child;
         while (p) {
             p->gen_var_decl();
             p = p->sibling;
         }
-        
+#ifdef varDeclDebug
+        cout << "# gen_var_decl in funcDecl fin" << endl;
+#endif
     }
     else if (nodeType == NODE_STMT && (stype == STMT_DECL || stype == STMT_CONSTDECL)) {
+#ifdef varDeclDebug
+        cout << "# gen_var_decl found varDecl stmt at node " << nodeID << endl;
+#endif
         // 找到了局部变量定义
         TreeNode* q = child->sibling->child;
         while (q) {
             // 遍历常变量列表，指针类型视为4字节int
             // q为标识符或声明赋值运算符
-            int varsize = ((q->child->pointLevel == 0) ? q->type->getSize() : 4);
             TreeNode *t = q;
             // 声明时赋值
             if (q->nodeType == NODE_OP && q->optype == OP_DECLASSIGN)
                 t = q->child;
+            int varsize = ((t->pointLevel == 0) ? t->type->getSize() : 4);
             LocalVarList[t->var_scope + t->var_name] = stackSize;
             stackSize -= varsize;
             q = q->sibling;
@@ -553,25 +804,23 @@ void TreeNode::gen_var_decl() {
 void TreeNode::gen_str() {
     static int strseq = 0;
     static bool print_rodata = false;
-    if (this->nodeType == NODE_PROG) {
-        TreeNode *p = this->child;
-        while (p) {
-            if (p->nodeType == NODE_CONST && p->type->type == VALUE_STRING) {
-                if (!print_rodata) {
-                    print_rodata = true;
-                    cout << "\t.section\t.rodata" << endl;
-                }
-                if (strList.count(p->str_val) == 0) {
-                    strList[p->str_val] = strseq;
-                    cout << ".LC" << strseq++ << ":" << endl
-                            << "\t.string\t" << "\"" << p->str_val << "\"" << endl;
-                }
-            } 
-            else if (p->child) {
-                p->gen_str();
+    TreeNode *p = this->child;
+    while (p) {
+        if (p->nodeType == NODE_CONST && p->type->type == VALUE_STRING) {
+            if (!print_rodata) {
+                print_rodata = true;
+                cout << "\t.section\t.rodata" << endl;
             }
-            p = p->sibling;
+            if (strList.count(p->str_val) == 0) {
+                strList[p->str_val] = strseq;
+                cout << ".LC" << strseq++ << ":" << endl
+                        << "\t.string\t" << "\"" << p->str_val << "\"" << endl;
+            }
+        } 
+        else if (p->child) {
+            p->gen_str();
         }
+        p = p->sibling;
     }
 }
 
@@ -592,29 +841,37 @@ void TreeNode::get_label() {
         case STMT_FUNCDECL:
             this->label.begin_label = this->child->sibling->var_name;
             // next为return和局部变量清理
-            this->label.next_label = new_label();
+            this->label.next_label = ".LRET_" + this->child->sibling->var_name;
             break;
         case STMT_IF:
             this->label.begin_label = new_label();
             this->label.true_label = new_label();
             this->label.false_label = this->label.next_label = new_label();
+            this->child->label.true_label = this->label.true_label;
+            this->child->label.false_label = this->label.false_label;
             break;
         case STMT_IFELSE:
             this->label.begin_label = new_label();
             this->label.true_label = new_label();
             this->label.false_label = new_label();
             this->label.next_label = new_label();
+            this->child->label.true_label = this->label.true_label;
+            this->child->label.false_label = this->label.false_label;
             break;
         case STMT_WHILE:
             this->label.begin_label = this->label.next_label = new_label();
             this->label.true_label = new_label();
             this->label.false_label = new_label();
+            this->child->label.true_label = this->label.true_label;
+            this->child->label.false_label = this->label.false_label;
             break;
         case STMT_FOR:
             this->label.begin_label = new_label();
             this->label.true_label = new_label();
             this->label.false_label = new_label();
             this->label.next_label = new_label();
+            this->child->sibling->label.true_label = this->label.true_label;
+            this->child->sibling->label.false_label = this->label.false_label;
             break;
         default:
             break;
@@ -624,13 +881,18 @@ void TreeNode::get_label() {
         switch (optype)
         {
         case OP_AND:
+            child->label.true_label = new_label();
+            child->sibling->label.true_label = label.true_label;
+            child->label.false_label = child->sibling->label.false_label = label.false_label;
             break;
         case OP_OR:
+            child->label.true_label = child->sibling->label.true_label = label.true_label;
+            child->label.false_label = new_label();
+            child->sibling->label.false_label = label.false_label;
             break;
         case OP_NOT:
-            temp = child->label.true_label;
-            child->label.true_label = child->label.false_label;
-            child->label.false_label = temp;
+            child->label.true_label = label.false_label;
+            child->label.false_label = label.true_label;
             break;
         default:
             break;
@@ -639,6 +901,20 @@ void TreeNode::get_label() {
     default:
         break;
     }
+}
+
+string TreeNode::getVarNameCode(TreeNode* p) {
+    string varCode = "";
+    if (p->var_scope == "1") {
+        // 全局变量
+        varCode = p->var_name;
+    }
+    else {
+        // 局部变量（不要跨定义域访问）
+        varCode += LocalVarList[p->var_scope + p->var_name];
+        varCode += "(%ebp)";                
+    }
+    return varCode;
 }
 
 void TreeNode::printAST() {
@@ -839,7 +1115,24 @@ void TreeNode::printConstVal() {
                 cout << "fasle";
             break;
         case VALUE_CHAR:
-            cout << ch_val;
+            switch (ch_val)
+            {
+            case '\n':
+                cout << "\\n";
+                break;
+            case '\r':
+                cout << "\\r";
+                break;
+            case '\t':
+                cout << "\\t";
+                break;
+            case '\0':
+                cout << "\\0";
+                break;
+            default:
+                cout << ch_val;
+                break;
+            }
             break;
         case VALUE_INT:
             cout << int_val;
@@ -855,12 +1148,25 @@ void TreeNode::printConstVal() {
 }
 
 void InitIOFunctionNode() {
+    int k = 4;
+    nodeScanf->lineno = -1;
+    nodeScanf->var_name = "scanf";
+    nodeScanf->var_scope = "1";
     nodeScanf->type = new Type(COMPOSE_FUNCTION);
     nodeScanf->type->retType = TYPE_VOID;
     nodeScanf->type->paramType[nodeScanf->type->paramNum++] = TYPE_STRING;
-    nodeScanf->type->paramType[nodeScanf->type->paramNum++] = TYPE_NONE;
+    for (int i = 0; i < k;i++)
+        nodeScanf->type->paramType[nodeScanf->type->paramNum++] = TYPE_INT;
+    idNameList.insert(make_pair("scanf", "1"));
+    idList[make_pair("scanf", "1")] = nodeScanf;
+    nodePrintf->lineno = -1;
+    nodePrintf->var_name = "printf";
+    nodePrintf->var_scope = "1";
     nodePrintf->type = new Type(COMPOSE_FUNCTION);
     nodePrintf->type->retType = TYPE_VOID;
     nodePrintf->type->paramType[nodePrintf->type->paramNum++] = TYPE_STRING;
-    nodePrintf->type->paramType[nodePrintf->type->paramNum++] = TYPE_NONE;
+    for (int i = 0; i < k;i++)
+        nodePrintf->type->paramType[nodePrintf->type->paramNum++] = TYPE_INT;
+    idNameList.insert(make_pair("printf", "1"));
+    idList[make_pair("printf", "1")] = nodePrintf;
 }

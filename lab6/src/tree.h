@@ -127,7 +127,9 @@ public:
 	void get_label();
 
 	void genCode();
-	
+	// 传入标识符结点指针，返回它在汇编中的变量表示
+	string getVarNameCode(TreeNode* p);
+
 public:
 	static string nodeType2String (NodeType type);
 	static string opType2String (OperatorType type);

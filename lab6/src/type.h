@@ -1,6 +1,7 @@
 #ifndef TYPESYSTEM_H
 #define TYPESYSTEM_H
 #include "./pch.h"
+
 using namespace std;
 
 #define MAX_PARAM 16
@@ -10,20 +11,26 @@ using namespace std;
 
 #define EXIT_AT_GRAMMA_ERROR
 
-#define AST
-// #define DEBUG
+#define DEBUG
 #ifdef DEBUG
+
+#define AST
+// #define PARSER_DEBUG
+#ifdef PARSER_DEBUG
 // #define SCOPE_DEBUG
-// #define ID_TOKEN_DEBUG
 // #define ID_REDUCE_DEBUG
-#define DECL_DEBUG
+// #define DECL_DEBUG
 // #define POINT_DEBUG
-#define ASSIGN_DEBUG
+// #define ASSIGN_DEBUG
 // #define IF_DEBUG
 // #define IFELSE_DEBUG
 // #define WHILE_DEBUG
 // #define FUNCALL_DEBUG
-#define typeCheck_debug
+#endif
+// #define typeCheck_debug
+// #define childNumdebug
+// #define varDeclDebug
+
 #endif
 
 enum ValueType
