@@ -47,3 +47,24 @@ void Type::addParam(Type* param){
 void Type::addRet(Type* t){
     this->retType = t;
 }
+
+int Type::getSize() {
+    int size = 0;
+    int eleSize;
+    switch (type)
+    {
+    case VALUE_BOOL:
+    case VALUE_INT:
+    case VALUE_CHAR:
+        return 4;
+    case VALUE_ARRAY:
+        this->type = elementType;
+        eleSize = this->getSize();
+        this->type = VALUE_ARRAY;
+        for (unsigned int i = 0; i < dim; i++)
+            size += eleSize * dimSize[i];
+        return size;
+    default:
+        return 0;
+    }
+}

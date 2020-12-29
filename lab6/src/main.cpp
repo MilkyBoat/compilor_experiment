@@ -27,9 +27,9 @@ int main(int argc, char *argv[]) {
         
     root->genNodeId();
 #ifdef AST
-    cout << "-------------------------" << endl;
+    cout << "# -------------------------" << endl;
     root->printAST();
-    cout << "-------------------------" << endl;
+    cout << "# -------------------------" << endl;
 #endif
     root->typeCheck();
 

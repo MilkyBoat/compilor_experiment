@@ -2,7 +2,7 @@ CC := g++
 CFLAGS := -Wall -Wextra -std=c++11  # without debug
 TARGET := ./main.out
 
-.PHONY: all clean main run lex yacc test debug link testscope asm nasm example-code out
+.PHONY: all clean main run lex yacc test debug link testscope asm asmc nasm example-code out
 
 all: complier
 
@@ -35,6 +35,9 @@ l3:
 l4:
 	./test.out --level 4
 
+diffcheck:
+	./test.out --diffcheck
+	
 noerrlog:
 	./test.out --nolog
 
@@ -42,9 +45,11 @@ type:
 	./test.out --type
 
 asm:
-	$(CC) -S asmTest.cpp -o asmTest.s
-	$(CC) asmTest.s -o asmTest.out
-	./asmTest.out
+	gcc -S asmTest.c -m32 -o asmTest.s
+
+asmc:
+	gcc asmTest.s -m32 -o asmTest.out
+	qemu-i386 asmTest.out
 
 std:
 	for file in $(basename $(shell find test/?/*.c)); \

@@ -17,6 +17,9 @@
 	// map <<标识符名称， 作用域>, 结点指针> 变量列表
 	extern map<pair<string, string>, TreeNode*> idList;
 
+	// 用于检查continue和break是否在循环内部
+	bool inCycle = false;
+
 	int yylex();
 	int yyerror( char const * );
 	int scopeCmp(string preScope, string varScope);
@@ -66,6 +69,13 @@ basicType
 | T_CHAR {$$ = new TreeNode(lineno, NODE_TYPE); $$->type = TYPE_CHAR;}
 | T_BOOL {$$ = new TreeNode(lineno, NODE_TYPE); $$->type = TYPE_BOOL;}
 | T_VOID {$$ = new TreeNode(lineno, NODE_TYPE); $$->type = TYPE_VOID;}
+;
+
+literalConst
+: INTEGER {$$ = new TreeNode(lineno, NODE_EXPR); $$->addChild($1);}
+| BOOL {$$ = new TreeNode(lineno, NODE_EXPR); $$->addChild($1);}
+| CHAR {$$ = new TreeNode(lineno, NODE_EXPR); $$->addChild($1);}
+| STRING {$$ = new TreeNode(lineno, NODE_EXPR); $$->addChild($1);}
 ;
 
 // ------ 复合标识符，包含指针与数组，在变量声明外使用 -----
@@ -205,7 +215,7 @@ constDefs
 ;
 
 constDef
-: pDeclIdentifier ASSIGN INTEGER {
+: pDeclIdentifier ASSIGN literalConst {
 	$$ = new TreeNode(lineno, NODE_OP); 
 	$$->optype = OP_DECLASSIGN; 
 	$$->addChild($1); 
@@ -221,8 +231,8 @@ constDef
 
 // 数组初始化值
 ArrayInitVal
-: INTEGER {$$ = new TreeNode(lineno, NODE_VARLIST); $$->addChild($1);}
-| ArrayInitVal COMMA INTEGER {$$ = $1; $$->addChild($3);}
+: literalConst {$$ = new TreeNode(lineno, NODE_VARLIST); $$->addChild($1);}
+| ArrayInitVal COMMA literalConst {$$ = $1; $$->addChild($3);}
 ;
 
 varDecl
@@ -422,6 +432,7 @@ stmt
 	$$->stype = STMT_WHILE;
 	$$->addChild($3);
 	$$->addChild($5);
+	inCycle = false;
 	scopePop();
 	#ifdef WHILE
 		cout << "$ reduce WHILE at scope : " << presentScope << ", at line " << lineno << endl;
@@ -438,6 +449,7 @@ stmt
 	$$->addChild($6);
 	$$->addChild($8);
 	$$->addChild($10);
+	inCycle = false;
 	scopePop();
   }
 | FOR LPAREN expr SEMICOLON cond SEMICOLON expr RPAREN stmt_ {
@@ -447,18 +459,33 @@ stmt
 	$$->addChild($5);
 	$$->addChild($7);
 	$$->addChild($9);
+	inCycle = false;
 	scopePop();
   }
 
-| BREAK SEMICOLON {$$ = new TreeNode(lineno, NODE_STMT); $$->stype = STMT_BREAK; $$->type = TYPE_NONE;}
-| CONTINUE SEMICOLON{$$ = new TreeNode(lineno, NODE_STMT); $$->stype = STMT_CONTINUE; $$->type = TYPE_NONE;}
+| BREAK SEMICOLON {
+	if (!inCycle) {
+		yyerror("break statement outside loop");
+	}
+	$$ = new TreeNode(lineno, NODE_STMT); 
+	$$->stype = STMT_BREAK; 
+	$$->type = TYPE_NONE;
+  }
+| CONTINUE SEMICOLON{
+	if (!inCycle) {
+		yyerror("continue statement outside loop");
+	}
+	$$ = new TreeNode(lineno, NODE_STMT); 
+	$$->stype = STMT_CONTINUE; 
+	$$->type = TYPE_NONE;
+  }
 | RETURN SEMICOLON {$$ = new TreeNode(lineno, NODE_STMT); $$->stype = STMT_RETURN; $$->type = TYPE_NONE;}
 | RETURN expr SEMICOLON {$$ = new TreeNode(lineno, NODE_STMT); $$->stype = STMT_RETURN; $$->addChild($2); $$->type = TYPE_NONE;}
 ;
 
 IF : IF_ {scopePush();};
-WHILE : WHILE_ {scopePush();};
-FOR : FOR_ {scopePush();};
+WHILE : WHILE_ {inCycle = true; scopePush();};
+FOR : FOR_ {inCycle = true; scopePush();};
 
 // ---------------- 表达式 -------------------
 
@@ -472,26 +499,21 @@ cond
 
 andExpr
 : mulExpr {$$ = $1;}
-| andExpr PLUS mulExpr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_ADD; $$->addChild($1); $$->addChild($3);}
-| andExpr MINUS mulExpr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_SUB; $$->addChild($1); $$->addChild($3);}
+| mulExpr PLUS andExpr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_ADD; $$->addChild($1); $$->addChild($3);}
+| mulExpr MINUS andExpr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_SUB; $$->addChild($1); $$->addChild($3);}
 ;
 
 // factor
 mulExpr
 : unaryExpr {$$ = $1;}
-| mulExpr MUL unaryExpr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_MUL; $$->addChild($1); $$->addChild($3);}
-| mulExpr DIV unaryExpr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_DIV; $$->addChild($1); $$->addChild($3);}
-| mulExpr MOD unaryExpr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_MOD; $$->addChild($1); $$->addChild($3);}
+| unaryExpr MUL mulExpr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_MUL; $$->addChild($1); $$->addChild($3);}
+| unaryExpr DIV mulExpr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_DIV; $$->addChild($1); $$->addChild($3);}
+| unaryExpr MOD mulExpr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_MOD; $$->addChild($1); $$->addChild($3);}
 ;
 
 // 一元表达式
 unaryExpr
-: primaryExpr {$$ = $1;
-	#ifdef ASSIGN_DEBUG
-		cout << "$ reduce unaryExpr from primaryExpr at scope : " << presentScope << ", at line " << lineno << endl;
-		$$->printAST();
-	#endif
-}
+: primaryExpr {$$ = $1;}
 | PLUS expr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_POS; $$->addChild($2);}
 | MINUS expr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_NAG; $$->addChild($2);}
 | NOT cond {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_NOT; $$->addChild($2);}
@@ -503,8 +525,7 @@ unaryExpr
 primaryExpr
 : LPAREN expr RPAREN {$$ = $2;}
 | pIdentifier LPAREN funcRParams RPAREN {
-	$$ = new TreeNode(lineno, NODE_STMT);
-	$$->stype = STMT_FUNCALL;
+	$$ = new TreeNode(lineno, NODE_FUNCALL);
 	$$->addChild($1);
 	$$->addChild($3);
 	#ifdef FUNCALL_DEBUG
@@ -512,8 +533,7 @@ primaryExpr
 	#endif
   }
 | pIdentifier LPAREN RPAREN {
-	$$ = new TreeNode(lineno, NODE_STMT);
-	$$->stype = STMT_FUNCALL;
+	$$ = new TreeNode(lineno, NODE_FUNCALL);
 	$$->addChild($1);
 	$$->addChild(new TreeNode(lineno, NODE_VARLIST));
 	#ifdef FUNCALL_DEBUG
@@ -521,10 +541,7 @@ primaryExpr
 	#endif
   }
 | compIdentifier {$$ = new TreeNode(lineno, NODE_EXPR); $$->addChild($1);}
-| INTEGER {$$ = new TreeNode(lineno, NODE_EXPR); $$->addChild($1);}
-| BOOL {$$ = new TreeNode(lineno, NODE_EXPR); $$->addChild($1);}
-| CHAR {$$ = new TreeNode(lineno, NODE_EXPR); $$->addChild($1);}
-| STRING {$$ = new TreeNode(lineno, NODE_EXPR); $$->addChild($1);}
+| literalConst {$$ = $1;}
 ;
 
 // 函数实参列表
@@ -536,29 +553,29 @@ funcRParams
 // 或表达式
 LOrExpr
 : LAndExpr {$$ = $1;}
-| LOrExpr OR LAndExpr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_OR; $$->addChild($1); $$->addChild($3);}
+| LAndExpr OR LOrExpr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_OR; $$->addChild($1); $$->addChild($3);}
 ;
 
 // 与
 LAndExpr
 : eqExpr {$$ = $1;}
-| LAndExpr AND eqExpr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_AND; $$->addChild($1); $$->addChild($3);}
+| eqExpr AND LAndExpr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_AND; $$->addChild($1); $$->addChild($3);}
 ;
 
 // 相等关系
 eqExpr
 : relExpr {$$ = $1;}
-| eqExpr EQ relExpr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_EQ; $$->addChild($1); $$->addChild($3);}
-| eqExpr NEQ relExpr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_NEQ; $$->addChild($1); $$->addChild($3);}
+| relExpr EQ eqExpr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_EQ; $$->addChild($1); $$->addChild($3);}
+| relExpr NEQ eqExpr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_NEQ; $$->addChild($1); $$->addChild($3);}
 ;
 
 // 相对关系
 relExpr
 : expr {$$ = $1;}
-| relExpr GRA expr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_GRA; $$->addChild($1); $$->addChild($3);}
-| relExpr LES expr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_LES; $$->addChild($1); $$->addChild($3);}
-| relExpr GRAEQ expr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_GRAEQ; $$->addChild($1); $$->addChild($3);}
-| relExpr LESEQ expr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_LESEQ; $$->addChild($1); $$->addChild($3);}
+| expr GRA relExpr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_GRA; $$->addChild($1); $$->addChild($3);}
+| expr LES relExpr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_LES; $$->addChild($1); $$->addChild($3);}
+| expr GRAEQ relExpr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_GRAEQ; $$->addChild($1); $$->addChild($3);}
+| expr LESEQ relExpr {$$ = new TreeNode(lineno, NODE_OP); $$->optype = OP_LESEQ; $$->addChild($1); $$->addChild($3);}
 ;
 
 %%
@@ -567,7 +584,11 @@ int yyerror(char const * message)
 {
 	cout << "error: " << message << ", at line " << lineno << endl;
 	parserError = true;
-	return -1;
+#ifdef EXIT_AT_GRAMMA_ERROR
+	exit(0);
+#else
+	return 0;
+#endif
 }
 
 /*

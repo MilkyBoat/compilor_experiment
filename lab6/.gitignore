@@ -18,6 +18,7 @@ test/*/*.s
 test/*/*.sy
 test/*/*.res
 asmTest*
+result.*
 
 # log
 *.log

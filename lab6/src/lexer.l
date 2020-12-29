@@ -21,7 +21,7 @@ HEXINT 0[Xx][0-9a-fA-F]+
 
 BOOL (true)|(false)
 STRING \"[^(\")]*\"
-CHAR \'.?\'
+CHAR \'\\?.\'
 
 IDENTIFIER [[:alpha:]_][[:alpha:][:digit:]_]*
 
@@ -128,7 +128,50 @@ IDENTIFIER [[:alpha:]_][[:alpha:][:digit:]_]*
 {CHAR} {
     TreeNode* node = new TreeNode(lineno, NODE_CONST);
     node->type = TYPE_CHAR;
-    node->ch_val = yytext[1];
+    if (yytext[1] == '\\') {
+        // 支持转义字符
+        switch (yytext[2]) {
+        case 'a':
+            node->ch_val = 7;
+            break;
+        case 'b':
+            node->ch_val = 8;
+            break;
+        case 'f':
+            node->ch_val = 12;
+            break;
+        case 'n':
+            node->ch_val = 10;
+            break;
+        case 'r':
+            node->ch_val = 13;
+            break;
+        case 't':
+            node->ch_val = 9;
+            break;
+        case 'v':
+            node->ch_val = 11;
+            break;
+        case '\\':
+            node->ch_val = 92;
+            break;
+        case '\'':
+            node->ch_val = 39;
+            break;
+        case '"':
+            node->ch_val = 34;
+            break;
+        case '?':
+            node->ch_val = 63;
+            break;
+        default:
+            node->ch_val = 0;
+            break;
+        }
+    }
+    else {
+        node->ch_val = yytext[1];
+    }
     yylval = node;
     return CHAR;
 }

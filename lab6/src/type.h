@@ -8,8 +8,10 @@ using namespace std;
 #define MAX_SCOPE_STACK 32
 #define SCOPT_ID_BASE '1'
 
-// #define DEBUG
+#define EXIT_AT_GRAMMA_ERROR
+
 #define AST
+// #define DEBUG
 #ifdef DEBUG
 // #define SCOPE_DEBUG
 // #define ID_TOKEN_DEBUG
@@ -48,14 +50,15 @@ public:
     unsigned short paramNum; // for function
     Type* paramType[MAX_PARAM];
     Type* retType;
+    void addParam(Type* t);
+    void addRet(Type* t);
  
     unsigned int dim;   // for array
     ValueType elementType;
     int dimSize[MAX_ARRAY_DIM];
 
-    void addChild(Type* t);
-    void addParam(Type* t);
-    void addRet(Type* t);
+    int getSize();
+
 public:
     ValueType* sibling; 
 public:

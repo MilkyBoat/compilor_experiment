@@ -9,11 +9,12 @@ enum NodeType
 	NODE_OP,
 	NODE_CONST, 
 	NODE_VAR,
-	NODE_TYPE,
+	NODE_FUNCALL,
 
 	NODE_PROG,
 	NODE_STMT,
 	NODE_EXPR,
+	NODE_TYPE,
 	NODE_VARLIST,
 	NODE_PARAM,
 };
@@ -53,7 +54,6 @@ enum StmtType {
 	STMT_DECL,
 	STMT_CONSTDECL,
 	STMT_FUNCDECL,
-	STMT_FUNCALL,
 	STMT_IFELSE,
 	STMT_IF,
 	STMT_WHILE,
@@ -96,6 +96,7 @@ public:
 	void addChild(TreeNode*);
 	void addSibling(TreeNode*);
 	int getChildNum();
+	int getVal();
 
 	int nodeID;
 	void genNodeId();
@@ -116,13 +117,13 @@ public:
 
 	int node_seq = 0;
 	int temp_var_seq = 0;
-	int label_seq = 0;
 	Label label;
 
 	void gen_header();
 	void gen_var_decl();
-	void get_temp_var();
+	void gen_str();
 
+	string new_label();
 	void get_label();
 
 	void genCode();
