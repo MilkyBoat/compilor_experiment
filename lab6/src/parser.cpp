@@ -496,17 +496,17 @@ static const yytype_uint8 yytranslate[] =
 static const yytype_uint16 yyrline[] =
 {
        0,    59,    59,    60,    61,    62,    68,    69,    70,    71,
-      75,    76,    77,    78,    83,    84,    89,    90,    91,   103,
-     109,   118,   147,   148,   152,   153,   154,   159,   166,   174,
-     192,   193,   197,   213,   214,   218,   224,   234,   235,   239,
-     262,   263,   267,   268,   274,   285,   307,   323,   326,   327,
-     331,   342,   348,   349,   352,   353,   357,   358,   362,   367,
-     371,   372,   373,   374,   385,   395,   406,   420,   431,   439,
-     447,   448,   451,   452,   453,   458,   459,   469,   475,   481,
-     487,   496,   500,   501,   502,   507,   508,   509,   510,   515,
-     516,   517,   518,   519,   520,   525,   526,   527,   528,   536,
-     544,   549,   550,   555,   556,   561,   562,   567,   568,   569,
-     574,   575,   576,   577,   578
+      75,    76,    77,    78,    83,    84,    93,    94,    95,   106,
+     136,   170,   199,   200,   204,   205,   206,   211,   218,   226,
+     245,   246,   250,   265,   266,   270,   277,   288,   289,   293,
+     318,   319,   323,   324,   330,   341,   363,   379,   382,   383,
+     387,   398,   404,   405,   408,   409,   413,   414,   418,   423,
+     427,   428,   429,   430,   441,   451,   462,   486,   497,   505,
+     513,   514,   517,   518,   519,   524,   525,   535,   541,   547,
+     553,   562,   566,   567,   568,   573,   574,   575,   576,   581,
+     582,   583,   584,   585,   586,   591,   592,   593,   594,   602,
+     610,   615,   616,   621,   622,   627,   628,   633,   634,   635,
+     640,   641,   642,   643,   644
 };
 #endif
 
@@ -524,7 +524,7 @@ static const char *const yytname[] =
   "INC", "DEC", "IDENTIFIER", "INTEGER", "CHAR", "BOOL", "STRING",
   "$accept", "program", "basicType", "literalConst", "compIdentifier",
   "pIdentifier", "arrayIdentifier", "identifier", "declCompIdentifier",
-  "pDeclIdentifier", "constArrayIdentifier", "declIdentifier", "decl",
+  "pDeclIdentifier", "arrayDeclIdentifier", "declIdentifier", "decl",
   "constDecl", "constDefs", "constDef", "ArrayInitVal", "varDecl",
   "varDefs", "varDef", "funcDef", "funcLPAREN", "funcFParams",
   "funcFParam", "block", "blockLBRACE", "blockRBRACE", "blockItems",
@@ -1567,59 +1567,111 @@ yyreduce:
 
   case 15:
 #line 84 "src/parser.y" /* yacc.c:1646  */
-    {(yyval) = (yyvsp[0]);}
-#line 1572 "src/parser.cpp" /* yacc.c:1646  */
+    {
+	(yyval) = (yyvsp[0]);
+	// 归约完成，清除下标计数器，为下一次做准备
+	(yyval)->child->type->visitDim = 0;
+  }
+#line 1576 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 16:
-#line 89 "src/parser.y" /* yacc.c:1646  */
+#line 93 "src/parser.y" /* yacc.c:1646  */
     {(yyval) = new TreeNode((yyvsp[0]));}
-#line 1578 "src/parser.cpp" /* yacc.c:1646  */
+#line 1582 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 17:
-#line 90 "src/parser.y" /* yacc.c:1646  */
+#line 94 "src/parser.y" /* yacc.c:1646  */
     {(yyval) = (yyvsp[0]); (yyval)->pointLevel++;}
-#line 1584 "src/parser.cpp" /* yacc.c:1646  */
+#line 1588 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 18:
-#line 91 "src/parser.y" /* yacc.c:1646  */
+#line 95 "src/parser.y" /* yacc.c:1646  */
     {
 	(yyval) = (yyvsp[0]); 
 	(yyval)->pointLevel--;
-	#ifdef POINT_DEBUG
-		cout << "# $ pIdentifier : " << (yyval)->var_name 
-			 << ", pointlevel : " << (yyval)->pointLevel << endl;
-	#endif
+	if ((yyval)->pointLevel < -2) {
+		yyerror("Continuous addr operator");
+	}
   }
-#line 1597 "src/parser.cpp" /* yacc.c:1646  */
+#line 1600 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 19:
-#line 103 "src/parser.y" /* yacc.c:1646  */
+#line 106 "src/parser.y" /* yacc.c:1646  */
     {
 	(yyval) = new TreeNode(lineno, NODE_OP);
 	(yyval)->optype = OP_INDEX;
 	(yyval)->addChild((yyvsp[-3]));
-	(yyval)->addChild((yyvsp[-1]));
+
+	// 计算数组偏移量倍数
+	int biasRate = 1;
+	for (unsigned int i = (yyvsp[-3])->type->visitDim + 1; i < (yyvsp[-3])->type->dim; i++) {
+		biasRate *= (yyvsp[-3])->type->dimSize[i];
+	}
+	TreeNode* biasNode;
+	if (biasRate == 1) {
+		// 偏移倍数为1时省略乘法结点
+		biasNode = (yyvsp[-1]);
+	}
+	else {
+		biasNode = new TreeNode(lineno, NODE_OP);
+		biasNode->optype = OP_MUL;
+		biasNode->addChild((yyvsp[-1]));
+		TreeNode* biasRateExpr = new TreeNode(lineno, NODE_EXPR);
+		TreeNode* biasRateConst = new TreeNode(lineno, NODE_CONST);
+		biasRateConst->type = TYPE_INT;
+		biasRateConst->int_val = biasRate;
+		biasRateExpr->addChild(biasRateConst);
+		biasNode->addChild(biasRateExpr);
+	}
+	(yyvsp[-3])->type->visitDim++;
+
+	(yyval)->addChild(biasNode);
   }
-#line 1608 "src/parser.cpp" /* yacc.c:1646  */
+#line 1635 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 20:
-#line 109 "src/parser.y" /* yacc.c:1646  */
+#line 136 "src/parser.y" /* yacc.c:1646  */
     {
-	(yyval) = new TreeNode(lineno, NODE_OP);
-	(yyval)->optype = OP_INDEX;
-	(yyval)->addChild((yyvsp[-3]));
-	(yyval)->addChild((yyvsp[-1]));
+	(yyval) = (yyvsp[-3]);
+	TreeNode* newBiasNode = new TreeNode(lineno, NODE_OP);
+	newBiasNode->optype = OP_ADD;
+	newBiasNode->addChild((yyval)->child->sibling);
+	(yyval)->child->sibling = newBiasNode;
+
+	// 计算数组偏移量倍数
+	int biasRate = 1;
+	for (unsigned int i = (yyval)->child->type->visitDim + 1; i < (yyval)->child->type->dim; i++) {
+		biasRate *= (yyval)->child->type->dimSize[i];
+	}
+
+	TreeNode* biasNode;
+	if (biasRate == 1) {
+		// 偏移倍数为1时省略乘法结点
+		biasNode = (yyvsp[-1]);
+	}
+	else {
+		biasNode->optype = OP_MUL;
+		biasNode->addChild((yyvsp[-1]));
+		TreeNode* biasRateExpr = new TreeNode(lineno, NODE_EXPR);
+		TreeNode* biasRateConst = new TreeNode(lineno, NODE_CONST);
+		biasRateConst->type = TYPE_INT;
+		biasRateConst->int_val = biasRate;
+		biasRateExpr->addChild(biasRateConst);
+		biasNode->addChild(biasRateExpr);
+	}
+	(yyval)->child->type->visitDim++;
+	newBiasNode->addChild(biasNode);
   }
-#line 1619 "src/parser.cpp" /* yacc.c:1646  */
+#line 1671 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 21:
-#line 118 "src/parser.y" /* yacc.c:1646  */
+#line 170 "src/parser.y" /* yacc.c:1646  */
     {
 	(yyval) = (yyvsp[0]);
 	int idNameCount = idNameList.count((yyval)->var_name);
@@ -1646,66 +1698,67 @@ yyreduce:
 		yyerror(t.c_str());
 	}
 }
-#line 1650 "src/parser.cpp" /* yacc.c:1646  */
+#line 1702 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 22:
-#line 147 "src/parser.y" /* yacc.c:1646  */
+#line 199 "src/parser.y" /* yacc.c:1646  */
     {(yyval) = (yyvsp[0]);}
-#line 1656 "src/parser.cpp" /* yacc.c:1646  */
+#line 1708 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 23:
-#line 148 "src/parser.y" /* yacc.c:1646  */
+#line 200 "src/parser.y" /* yacc.c:1646  */
     {(yyval) = (yyvsp[0]);}
-#line 1662 "src/parser.cpp" /* yacc.c:1646  */
+#line 1714 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 24:
-#line 152 "src/parser.y" /* yacc.c:1646  */
+#line 204 "src/parser.y" /* yacc.c:1646  */
     {(yyval) = (yyvsp[0]);}
-#line 1668 "src/parser.cpp" /* yacc.c:1646  */
+#line 1720 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 25:
-#line 153 "src/parser.y" /* yacc.c:1646  */
-    {(yyval) = (yyvsp[0]); (yyval)->pointLevel++;}
-#line 1674 "src/parser.cpp" /* yacc.c:1646  */
+#line 205 "src/parser.y" /* yacc.c:1646  */
+    {(yyval) = (yyvsp[0]); (yyval)->type->pointLevel++;}
+#line 1726 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 26:
-#line 154 "src/parser.y" /* yacc.c:1646  */
-    {(yyval) = (yyvsp[0]); (yyval)->pointLevel--;}
-#line 1680 "src/parser.cpp" /* yacc.c:1646  */
+#line 206 "src/parser.y" /* yacc.c:1646  */
+    {(yyval) = (yyvsp[0]); (yyval)->type->pointLevel--;}
+#line 1732 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 27:
-#line 159 "src/parser.y" /* yacc.c:1646  */
+#line 211 "src/parser.y" /* yacc.c:1646  */
     {
   (yyval) = (yyvsp[-3]);
-  (yyval)->type = new Type(VALUE_ARRAY);
+  (yyval)->type->type = VALUE_ARRAY;
   (yyval)->type->elementType = (yyvsp[-3])->type->type;
   (yyval)->type->dimSize[(yyval)->type->dim] = (yyvsp[-1])->int_val;
   (yyval)->type->dim++;
 }
-#line 1692 "src/parser.cpp" /* yacc.c:1646  */
+#line 1744 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 28:
-#line 166 "src/parser.y" /* yacc.c:1646  */
+#line 218 "src/parser.y" /* yacc.c:1646  */
     {
   (yyval) = (yyvsp[-3]);
   (yyval)->type->dimSize[(yyval)->type->dim] = (yyvsp[-1])->int_val;
   (yyval)->type->dim++;
 }
-#line 1702 "src/parser.cpp" /* yacc.c:1646  */
+#line 1754 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 29:
-#line 174 "src/parser.y" /* yacc.c:1646  */
+#line 226 "src/parser.y" /* yacc.c:1646  */
     {
 	(yyval) = (yyvsp[0]);
 	(yyval)->var_scope = presentScope;
+	(yyval)->type = new Type(NOTYPE);
 	#ifdef ID_REDUCE_DEBUG
 		cout<<"# $ reduce declIdentifier : "<<(yyval)->var_name<<", at scope :"<<presentScope<<endl;
 	#endif
@@ -1716,87 +1769,88 @@ yyreduce:
 	idNameList.insert(make_pair((yyval)->var_name, (yyval)->var_scope));
 	idList[make_pair((yyval)->var_name, (yyval)->var_scope)] = (yyval);
 }
-#line 1720 "src/parser.cpp" /* yacc.c:1646  */
+#line 1773 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 30:
-#line 192 "src/parser.y" /* yacc.c:1646  */
+#line 245 "src/parser.y" /* yacc.c:1646  */
     {(yyval) = (yyvsp[0]);}
-#line 1726 "src/parser.cpp" /* yacc.c:1646  */
+#line 1779 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 31:
-#line 193 "src/parser.y" /* yacc.c:1646  */
+#line 246 "src/parser.y" /* yacc.c:1646  */
     {(yyval) = (yyvsp[0]);}
-#line 1732 "src/parser.cpp" /* yacc.c:1646  */
+#line 1785 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 32:
-#line 197 "src/parser.y" /* yacc.c:1646  */
+#line 250 "src/parser.y" /* yacc.c:1646  */
     {
   (yyval) = new TreeNode(lineno, NODE_STMT);
   (yyval)->stype = STMT_CONSTDECL;
   (yyval)->type = TYPE_NONE;
-  (yyvsp[-2])->type->constvar = true;
   (yyval)->addChild((yyvsp[-2]));
   (yyval)->addChild((yyvsp[-1]));  
   TreeNode* p = (yyvsp[-1])->child;
   while(p != nullptr) {
-	  p->child->type = (yyvsp[-2])->type;
+	  p->child->type->copy((yyvsp[-2])->type);
 	  p = p->sibling;
   }
 }
-#line 1750 "src/parser.cpp" /* yacc.c:1646  */
+#line 1802 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 33:
-#line 213 "src/parser.y" /* yacc.c:1646  */
+#line 265 "src/parser.y" /* yacc.c:1646  */
     {(yyval) = new TreeNode(lineno, NODE_VARLIST); (yyval)->addChild((yyvsp[0]));}
-#line 1756 "src/parser.cpp" /* yacc.c:1646  */
+#line 1808 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 34:
-#line 214 "src/parser.y" /* yacc.c:1646  */
+#line 266 "src/parser.y" /* yacc.c:1646  */
     {(yyval) = (yyvsp[-2]); (yyval)->addChild((yyvsp[0]));}
-#line 1762 "src/parser.cpp" /* yacc.c:1646  */
+#line 1814 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 35:
-#line 218 "src/parser.y" /* yacc.c:1646  */
+#line 270 "src/parser.y" /* yacc.c:1646  */
     {
 	(yyval) = new TreeNode(lineno, NODE_OP); 
-	(yyval)->optype = OP_DECLASSIGN; 
+	(yyval)->optype = OP_DECLASSIGN;
+	(yyvsp[-2])->type->constvar = true;
 	(yyval)->addChild((yyvsp[-2])); 
 	(yyval)->addChild((yyvsp[0]));
   }
-#line 1773 "src/parser.cpp" /* yacc.c:1646  */
+#line 1826 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 36:
-#line 224 "src/parser.y" /* yacc.c:1646  */
+#line 277 "src/parser.y" /* yacc.c:1646  */
     {
-	(yyval) = new TreeNode(lineno, NODE_OP); 
-	(yyval)->optype = OP_DECLASSIGN; 
+	(yyval) = new TreeNode(lineno, NODE_OP);
+	(yyval)->optype = OP_DECLASSIGN;
+	(yyvsp[-4])->type->constvar = true;
 	(yyval)->addChild((yyvsp[-4])); 
 	(yyval)->addChild((yyvsp[-1]));
   }
-#line 1784 "src/parser.cpp" /* yacc.c:1646  */
+#line 1838 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 37:
-#line 234 "src/parser.y" /* yacc.c:1646  */
+#line 288 "src/parser.y" /* yacc.c:1646  */
     {(yyval) = new TreeNode(lineno, NODE_VARLIST); (yyval)->addChild((yyvsp[0]));}
-#line 1790 "src/parser.cpp" /* yacc.c:1646  */
+#line 1844 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 38:
-#line 235 "src/parser.y" /* yacc.c:1646  */
+#line 289 "src/parser.y" /* yacc.c:1646  */
     {(yyval) = (yyvsp[-2]); (yyval)->addChild((yyvsp[0]));}
-#line 1796 "src/parser.cpp" /* yacc.c:1646  */
+#line 1850 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 39:
-#line 239 "src/parser.y" /* yacc.c:1646  */
+#line 293 "src/parser.y" /* yacc.c:1646  */
     {
   (yyval) = new TreeNode(lineno, NODE_STMT);
   (yyval)->stype = STMT_DECL;
@@ -1806,9 +1860,11 @@ yyreduce:
   TreeNode* p = (yyvsp[-1])->child;
   while(p != nullptr) {
 	  if (p->nodeType == NODE_OP) {
-		  p->child->type = (yyvsp[-2])->type;
+		  p->child->type->copy((yyvsp[-2])->type);
 	  }
-	  p->type = (yyvsp[-2])->type;
+	  else {
+	  	p->type->copy((yyvsp[-2])->type);
+	  }
 	  p = p->sibling;
   }
   #ifdef DECL_DEBUG
@@ -1816,55 +1872,55 @@ yyreduce:
 	// $$->printAST();
   #endif
 }
-#line 1820 "src/parser.cpp" /* yacc.c:1646  */
+#line 1876 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 40:
-#line 262 "src/parser.y" /* yacc.c:1646  */
+#line 318 "src/parser.y" /* yacc.c:1646  */
     {(yyval) = new TreeNode(lineno, NODE_VARLIST); (yyval)->addChild((yyvsp[0]));}
-#line 1826 "src/parser.cpp" /* yacc.c:1646  */
+#line 1882 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 41:
-#line 263 "src/parser.y" /* yacc.c:1646  */
+#line 319 "src/parser.y" /* yacc.c:1646  */
     {(yyval) = (yyvsp[-2]); (yyval)->addChild((yyvsp[0]));}
-#line 1832 "src/parser.cpp" /* yacc.c:1646  */
+#line 1888 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 42:
-#line 267 "src/parser.y" /* yacc.c:1646  */
+#line 323 "src/parser.y" /* yacc.c:1646  */
     {(yyval) = (yyvsp[0]);}
-#line 1838 "src/parser.cpp" /* yacc.c:1646  */
+#line 1894 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 43:
-#line 268 "src/parser.y" /* yacc.c:1646  */
+#line 324 "src/parser.y" /* yacc.c:1646  */
     {
 	(yyval) = new TreeNode(lineno, NODE_OP);
 	(yyval)->optype = OP_DECLASSIGN;
 	(yyval)->addChild((yyvsp[-2]));
 	(yyval)->addChild((yyvsp[0]));
   }
-#line 1849 "src/parser.cpp" /* yacc.c:1646  */
+#line 1905 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 44:
-#line 274 "src/parser.y" /* yacc.c:1646  */
+#line 330 "src/parser.y" /* yacc.c:1646  */
     {
 	(yyval) = new TreeNode(lineno, NODE_OP);
 	(yyval)->optype = OP_DECLASSIGN;
 	(yyval)->addChild((yyvsp[-4]));
 	(yyval)->addChild((yyvsp[-1]));
   }
-#line 1860 "src/parser.cpp" /* yacc.c:1646  */
+#line 1916 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 45:
-#line 285 "src/parser.y" /* yacc.c:1646  */
+#line 341 "src/parser.y" /* yacc.c:1646  */
     {
 	(yyval) = new TreeNode(lineno, NODE_STMT);
 	(yyval)->stype = STMT_FUNCDECL;
-	(yyvsp[-6])->type = new Type(COMPOSE_FUNCTION);
+	(yyvsp[-6])->type->type = COMPOSE_FUNCTION;
 	TreeNode* param = (yyvsp[-4]);
 	while (param != nullptr) {
 		(yyvsp[-6])->type->paramType[(yyvsp[-6])->type->paramNum] = param->child->type;
@@ -1883,15 +1939,15 @@ yyreduce:
 	(yyval)->addChild(funcBlock);
 	scopePop();
   }
-#line 1887 "src/parser.cpp" /* yacc.c:1646  */
+#line 1943 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 46:
-#line 307 "src/parser.y" /* yacc.c:1646  */
+#line 363 "src/parser.y" /* yacc.c:1646  */
     {
 	(yyval) = new TreeNode(lineno, NODE_STMT);
 	(yyval)->stype = STMT_FUNCDECL;
-	(yyvsp[-5])->type = new Type(COMPOSE_FUNCTION);
+	(yyvsp[-5])->type->type = COMPOSE_FUNCTION;
 	(yyvsp[-5])->type->retType = (yyvsp[-6])->type;
 	(yyval)->addChild((yyvsp[-6]));
 	(yyval)->addChild((yyvsp[-5]));
@@ -1902,120 +1958,120 @@ yyreduce:
 	(yyval)->addChild(funcBlock);
 	scopePop();
   }
-#line 1906 "src/parser.cpp" /* yacc.c:1646  */
+#line 1962 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 47:
-#line 323 "src/parser.y" /* yacc.c:1646  */
+#line 379 "src/parser.y" /* yacc.c:1646  */
     {scopePush();}
-#line 1912 "src/parser.cpp" /* yacc.c:1646  */
+#line 1968 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 48:
-#line 326 "src/parser.y" /* yacc.c:1646  */
+#line 382 "src/parser.y" /* yacc.c:1646  */
     {(yyval) = (yyvsp[0]);}
-#line 1918 "src/parser.cpp" /* yacc.c:1646  */
+#line 1974 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 49:
-#line 327 "src/parser.y" /* yacc.c:1646  */
+#line 383 "src/parser.y" /* yacc.c:1646  */
     {(yyval) = (yyvsp[-2]); (yyval)->addSibling((yyvsp[0]));}
-#line 1924 "src/parser.cpp" /* yacc.c:1646  */
+#line 1980 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 50:
-#line 331 "src/parser.y" /* yacc.c:1646  */
+#line 387 "src/parser.y" /* yacc.c:1646  */
     {
 	(yyval) = new TreeNode(lineno, NODE_PARAM); 
 	(yyval)->addChild((yyvsp[-1])); 
 	(yyval)->addChild((yyvsp[0]));
-	(yyvsp[0])->type = (yyvsp[-1])->type;
+	(yyvsp[0])->type->copy((yyvsp[-1])->type);
   }
-#line 1935 "src/parser.cpp" /* yacc.c:1646  */
+#line 1991 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 51:
-#line 342 "src/parser.y" /* yacc.c:1646  */
+#line 398 "src/parser.y" /* yacc.c:1646  */
     {
 	(yyval) = new TreeNode(lineno, NODE_STMT);
 	(yyval)->stype = STMT_BLOCK;
 	(yyval)->addChild((yyvsp[-1]));
 }
-#line 1945 "src/parser.cpp" /* yacc.c:1646  */
+#line 2001 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 52:
-#line 348 "src/parser.y" /* yacc.c:1646  */
+#line 404 "src/parser.y" /* yacc.c:1646  */
     {scopePush();}
-#line 1951 "src/parser.cpp" /* yacc.c:1646  */
+#line 2007 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 53:
-#line 349 "src/parser.y" /* yacc.c:1646  */
+#line 405 "src/parser.y" /* yacc.c:1646  */
     {scopePop();}
-#line 1957 "src/parser.cpp" /* yacc.c:1646  */
+#line 2013 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 54:
-#line 352 "src/parser.y" /* yacc.c:1646  */
+#line 408 "src/parser.y" /* yacc.c:1646  */
     {(yyval) = (yyvsp[0]);}
-#line 1963 "src/parser.cpp" /* yacc.c:1646  */
+#line 2019 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 55:
-#line 353 "src/parser.y" /* yacc.c:1646  */
+#line 409 "src/parser.y" /* yacc.c:1646  */
     {(yyval) = (yyvsp[-1]); (yyval)->addSibling((yyvsp[0]));}
-#line 1969 "src/parser.cpp" /* yacc.c:1646  */
+#line 2025 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 56:
-#line 357 "src/parser.y" /* yacc.c:1646  */
+#line 413 "src/parser.y" /* yacc.c:1646  */
     {(yyval) = (yyvsp[0]);}
-#line 1975 "src/parser.cpp" /* yacc.c:1646  */
+#line 2031 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 57:
-#line 358 "src/parser.y" /* yacc.c:1646  */
+#line 414 "src/parser.y" /* yacc.c:1646  */
     {(yyval) = (yyvsp[0]);}
-#line 1981 "src/parser.cpp" /* yacc.c:1646  */
+#line 2037 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 58:
-#line 362 "src/parser.y" /* yacc.c:1646  */
+#line 418 "src/parser.y" /* yacc.c:1646  */
     {
 	(yyval) = new TreeNode(lineno, NODE_STMT);
 	(yyval)->stype = STMT_BLOCK;
 	(yyval)->addChild((yyvsp[-1]));
   }
-#line 1991 "src/parser.cpp" /* yacc.c:1646  */
+#line 2047 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 59:
-#line 367 "src/parser.y" /* yacc.c:1646  */
+#line 423 "src/parser.y" /* yacc.c:1646  */
     {(yyval) = (yyvsp[0]);}
-#line 1997 "src/parser.cpp" /* yacc.c:1646  */
+#line 2053 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 60:
-#line 371 "src/parser.y" /* yacc.c:1646  */
+#line 427 "src/parser.y" /* yacc.c:1646  */
     {(yyval) = new TreeNode(lineno, NODE_STMT); (yyval)->stype = STMT_SKIP;}
-#line 2003 "src/parser.cpp" /* yacc.c:1646  */
+#line 2059 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 61:
-#line 372 "src/parser.y" /* yacc.c:1646  */
+#line 428 "src/parser.y" /* yacc.c:1646  */
     {(yyval) = (yyvsp[-1]);}
-#line 2009 "src/parser.cpp" /* yacc.c:1646  */
+#line 2065 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 62:
-#line 373 "src/parser.y" /* yacc.c:1646  */
+#line 429 "src/parser.y" /* yacc.c:1646  */
     {(yyval) = (yyvsp[0]);}
-#line 2015 "src/parser.cpp" /* yacc.c:1646  */
+#line 2071 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 63:
-#line 374 "src/parser.y" /* yacc.c:1646  */
+#line 430 "src/parser.y" /* yacc.c:1646  */
     {
 	(yyval) = new TreeNode(lineno, NODE_STMT);
 	(yyval)->stype = STMT_IFELSE;
@@ -2027,11 +2083,11 @@ yyreduce:
 		cout << "# $ reduce IF-ELSE at scope : " << presentScope << ", at line " << lineno << endl;
 	#endif
   }
-#line 2031 "src/parser.cpp" /* yacc.c:1646  */
+#line 2087 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 64:
-#line 385 "src/parser.y" /* yacc.c:1646  */
+#line 441 "src/parser.y" /* yacc.c:1646  */
     {
 	(yyval) = new TreeNode(lineno, NODE_STMT);
 	(yyval)->stype = STMT_IF;
@@ -2042,11 +2098,11 @@ yyreduce:
 		cout << "% # $ reduce IF at scope : " << presentScope << ", at line " << lineno << endl;
 	#endif
   }
-#line 2046 "src/parser.cpp" /* yacc.c:1646  */
+#line 2102 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 65:
-#line 395 "src/parser.y" /* yacc.c:1646  */
+#line 451 "src/parser.y" /* yacc.c:1646  */
     {
 	(yyval) = new TreeNode(lineno, NODE_STMT);
 	(yyval)->stype = STMT_WHILE;
@@ -2058,17 +2114,27 @@ yyreduce:
 		cout << "# $ reduce WHILE at scope : " << presentScope << ", at line " << lineno << endl;
 	#endif
   }
-#line 2062 "src/parser.cpp" /* yacc.c:1646  */
+#line 2118 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 66:
-#line 406 "src/parser.y" /* yacc.c:1646  */
+#line 462 "src/parser.y" /* yacc.c:1646  */
     {
 	(yyval) = new TreeNode(lineno, NODE_STMT);
 	(yyval)->stype = STMT_FOR;
 	TreeNode* forDecl = new TreeNode(lineno, NODE_STMT);
 	forDecl->stype = STMT_DECL;
 	forDecl->addChild((yyvsp[-7]));
+	TreeNode* p = (yyvsp[-6])->child;
+	while (p) {
+		if (p->nodeType == NODE_OP) {
+			p->child->type->copy((yyvsp[-7])->type);
+		}
+		else {
+			p->type->copy((yyvsp[-7])->type);
+		}
+		p = p->sibling;
+	}
 	forDecl->addChild((yyvsp[-6]));
 	(yyval)->addChild(forDecl);
 	(yyval)->addChild((yyvsp[-4]));
@@ -2077,11 +2143,11 @@ yyreduce:
 	inCycle = false;
 	scopePop();
   }
-#line 2081 "src/parser.cpp" /* yacc.c:1646  */
+#line 2147 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 67:
-#line 420 "src/parser.y" /* yacc.c:1646  */
+#line 486 "src/parser.y" /* yacc.c:1646  */
     {
 	(yyval) = new TreeNode(lineno, NODE_STMT);
 	(yyval)->stype = STMT_FOR;
@@ -2092,11 +2158,11 @@ yyreduce:
 	inCycle = false;
 	scopePop();
   }
-#line 2096 "src/parser.cpp" /* yacc.c:1646  */
+#line 2162 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 68:
-#line 431 "src/parser.y" /* yacc.c:1646  */
+#line 497 "src/parser.y" /* yacc.c:1646  */
     {
 	if (!inCycle) {
 		yyerror("break statement outside loop");
@@ -2105,11 +2171,11 @@ yyreduce:
 	(yyval)->stype = STMT_BREAK; 
 	(yyval)->type = TYPE_NONE;
   }
-#line 2109 "src/parser.cpp" /* yacc.c:1646  */
+#line 2175 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 69:
-#line 439 "src/parser.y" /* yacc.c:1646  */
+#line 505 "src/parser.y" /* yacc.c:1646  */
     {
 	if (!inCycle) {
 		yyerror("continue statement outside loop");
@@ -2118,47 +2184,47 @@ yyreduce:
 	(yyval)->stype = STMT_CONTINUE; 
 	(yyval)->type = TYPE_NONE;
   }
-#line 2122 "src/parser.cpp" /* yacc.c:1646  */
+#line 2188 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 70:
-#line 447 "src/parser.y" /* yacc.c:1646  */
+#line 513 "src/parser.y" /* yacc.c:1646  */
     {(yyval) = new TreeNode(lineno, NODE_STMT); (yyval)->stype = STMT_RETURN; (yyval)->type = TYPE_NONE;}
-#line 2128 "src/parser.cpp" /* yacc.c:1646  */
+#line 2194 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 71:
-#line 448 "src/parser.y" /* yacc.c:1646  */
+#line 514 "src/parser.y" /* yacc.c:1646  */
     {(yyval) = new TreeNode(lineno, NODE_STMT); (yyval)->stype = STMT_RETURN; (yyval)->addChild((yyvsp[-1])); (yyval)->type = TYPE_NONE;}
-#line 2134 "src/parser.cpp" /* yacc.c:1646  */
+#line 2200 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 72:
-#line 451 "src/parser.y" /* yacc.c:1646  */
+#line 517 "src/parser.y" /* yacc.c:1646  */
     {scopePush();}
-#line 2140 "src/parser.cpp" /* yacc.c:1646  */
+#line 2206 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 73:
-#line 452 "src/parser.y" /* yacc.c:1646  */
+#line 518 "src/parser.y" /* yacc.c:1646  */
     {inCycle = true; scopePush();}
-#line 2146 "src/parser.cpp" /* yacc.c:1646  */
+#line 2212 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 74:
-#line 453 "src/parser.y" /* yacc.c:1646  */
+#line 519 "src/parser.y" /* yacc.c:1646  */
     {inCycle = true; scopePush();}
-#line 2152 "src/parser.cpp" /* yacc.c:1646  */
+#line 2218 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 75:
-#line 458 "src/parser.y" /* yacc.c:1646  */
+#line 524 "src/parser.y" /* yacc.c:1646  */
     {(yyval) = (yyvsp[0]);}
-#line 2158 "src/parser.cpp" /* yacc.c:1646  */
+#line 2224 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 76:
-#line 459 "src/parser.y" /* yacc.c:1646  */
+#line 525 "src/parser.y" /* yacc.c:1646  */
     {
 	(yyval) = new TreeNode(lineno, NODE_OP);
 	(yyval)->optype = OP_ASSIGN;
@@ -2169,157 +2235,157 @@ yyreduce:
 		// $$->printAST();
 	#endif
   }
-#line 2173 "src/parser.cpp" /* yacc.c:1646  */
+#line 2239 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 77:
-#line 469 "src/parser.y" /* yacc.c:1646  */
+#line 535 "src/parser.y" /* yacc.c:1646  */
     {
 	(yyval) = new TreeNode(lineno, NODE_OP);
 	(yyval)->optype = OP_ADDASSIGN;
 	(yyval)->addChild((yyvsp[-2]));
 	(yyval)->addChild((yyvsp[0]));
   }
-#line 2184 "src/parser.cpp" /* yacc.c:1646  */
+#line 2250 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 78:
-#line 475 "src/parser.y" /* yacc.c:1646  */
+#line 541 "src/parser.y" /* yacc.c:1646  */
     {
 	(yyval) = new TreeNode(lineno, NODE_OP);
 	(yyval)->optype = OP_SUBASSIGN;
 	(yyval)->addChild((yyvsp[-2]));
 	(yyval)->addChild((yyvsp[0]));
   }
-#line 2195 "src/parser.cpp" /* yacc.c:1646  */
+#line 2261 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 79:
-#line 481 "src/parser.y" /* yacc.c:1646  */
+#line 547 "src/parser.y" /* yacc.c:1646  */
     {
 	(yyval) = new TreeNode(lineno, NODE_OP);
 	(yyval)->optype = OP_MULASSIGN;
 	(yyval)->addChild((yyvsp[-2]));
 	(yyval)->addChild((yyvsp[0]));
   }
-#line 2206 "src/parser.cpp" /* yacc.c:1646  */
+#line 2272 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 80:
-#line 487 "src/parser.y" /* yacc.c:1646  */
+#line 553 "src/parser.y" /* yacc.c:1646  */
     {
 	(yyval) = new TreeNode(lineno, NODE_OP);
 	(yyval)->optype = OP_DIVASSIGN;
 	(yyval)->addChild((yyvsp[-2]));
 	(yyval)->addChild((yyvsp[0]));
   }
-#line 2217 "src/parser.cpp" /* yacc.c:1646  */
-    break;
-
-  case 81:
-#line 496 "src/parser.y" /* yacc.c:1646  */
-    {(yyval) = (yyvsp[0]);}
-#line 2223 "src/parser.cpp" /* yacc.c:1646  */
-    break;
-
-  case 82:
-#line 500 "src/parser.y" /* yacc.c:1646  */
-    {(yyval) = (yyvsp[0]);}
-#line 2229 "src/parser.cpp" /* yacc.c:1646  */
-    break;
-
-  case 83:
-#line 501 "src/parser.y" /* yacc.c:1646  */
-    {(yyval) = new TreeNode(lineno, NODE_OP); (yyval)->optype = OP_ADD; (yyval)->addChild((yyvsp[-2])); (yyval)->addChild((yyvsp[0]));}
-#line 2235 "src/parser.cpp" /* yacc.c:1646  */
-    break;
-
-  case 84:
-#line 502 "src/parser.y" /* yacc.c:1646  */
-    {(yyval) = new TreeNode(lineno, NODE_OP); (yyval)->optype = OP_SUB; (yyval)->addChild((yyvsp[-2])); (yyval)->addChild((yyvsp[0]));}
-#line 2241 "src/parser.cpp" /* yacc.c:1646  */
-    break;
-
-  case 85:
-#line 507 "src/parser.y" /* yacc.c:1646  */
-    {(yyval) = (yyvsp[0]);}
-#line 2247 "src/parser.cpp" /* yacc.c:1646  */
-    break;
-
-  case 86:
-#line 508 "src/parser.y" /* yacc.c:1646  */
-    {(yyval) = new TreeNode(lineno, NODE_OP); (yyval)->optype = OP_MUL; (yyval)->addChild((yyvsp[-2])); (yyval)->addChild((yyvsp[0]));}
-#line 2253 "src/parser.cpp" /* yacc.c:1646  */
-    break;
-
-  case 87:
-#line 509 "src/parser.y" /* yacc.c:1646  */
-    {(yyval) = new TreeNode(lineno, NODE_OP); (yyval)->optype = OP_DIV; (yyval)->addChild((yyvsp[-2])); (yyval)->addChild((yyvsp[0]));}
-#line 2259 "src/parser.cpp" /* yacc.c:1646  */
-    break;
-
-  case 88:
-#line 510 "src/parser.y" /* yacc.c:1646  */
-    {(yyval) = new TreeNode(lineno, NODE_OP); (yyval)->optype = OP_MOD; (yyval)->addChild((yyvsp[-2])); (yyval)->addChild((yyvsp[0]));}
-#line 2265 "src/parser.cpp" /* yacc.c:1646  */
-    break;
-
-  case 89:
-#line 515 "src/parser.y" /* yacc.c:1646  */
-    {(yyval) = (yyvsp[0]);}
-#line 2271 "src/parser.cpp" /* yacc.c:1646  */
-    break;
-
-  case 90:
-#line 516 "src/parser.y" /* yacc.c:1646  */
-    {(yyval) = new TreeNode(lineno, NODE_OP); (yyval)->optype = OP_NOT; (yyval)->addChild((yyvsp[0]));}
-#line 2277 "src/parser.cpp" /* yacc.c:1646  */
-    break;
-
-  case 91:
-#line 517 "src/parser.y" /* yacc.c:1646  */
-    {(yyval) = new TreeNode(lineno, NODE_OP); (yyval)->optype = OP_POS; (yyval)->addChild((yyvsp[0]));}
 #line 2283 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
-  case 92:
-#line 518 "src/parser.y" /* yacc.c:1646  */
-    {(yyval) = new TreeNode(lineno, NODE_OP); (yyval)->optype = OP_NAG; (yyval)->addChild((yyvsp[0]));}
+  case 81:
+#line 562 "src/parser.y" /* yacc.c:1646  */
+    {(yyval) = (yyvsp[0]);}
 #line 2289 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
-  case 93:
-#line 519 "src/parser.y" /* yacc.c:1646  */
-    {(yyval) = new TreeNode(lineno, NODE_OP); (yyval)->optype = OP_INC; (yyval)->addChild((yyvsp[-1]));}
+  case 82:
+#line 566 "src/parser.y" /* yacc.c:1646  */
+    {(yyval) = (yyvsp[0]);}
 #line 2295 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
-  case 94:
-#line 520 "src/parser.y" /* yacc.c:1646  */
-    {(yyval) = new TreeNode(lineno, NODE_OP); (yyval)->optype = OP_DEC; (yyval)->addChild((yyvsp[-1]));}
+  case 83:
+#line 567 "src/parser.y" /* yacc.c:1646  */
+    {(yyval) = new TreeNode(lineno, NODE_OP); (yyval)->optype = OP_ADD; (yyval)->addChild((yyvsp[-2])); (yyval)->addChild((yyvsp[0]));}
 #line 2301 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
-  case 95:
-#line 525 "src/parser.y" /* yacc.c:1646  */
-    {(yyval) = (yyvsp[0]);}
+  case 84:
+#line 568 "src/parser.y" /* yacc.c:1646  */
+    {(yyval) = new TreeNode(lineno, NODE_OP); (yyval)->optype = OP_SUB; (yyval)->addChild((yyvsp[-2])); (yyval)->addChild((yyvsp[0]));}
 #line 2307 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
-  case 96:
-#line 526 "src/parser.y" /* yacc.c:1646  */
-    {(yyval) = (yyvsp[-1]);}
+  case 85:
+#line 573 "src/parser.y" /* yacc.c:1646  */
+    {(yyval) = (yyvsp[0]);}
 #line 2313 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
-  case 97:
-#line 527 "src/parser.y" /* yacc.c:1646  */
-    {(yyval) = (yyvsp[-1]);}
+  case 86:
+#line 574 "src/parser.y" /* yacc.c:1646  */
+    {(yyval) = new TreeNode(lineno, NODE_OP); (yyval)->optype = OP_MUL; (yyval)->addChild((yyvsp[-2])); (yyval)->addChild((yyvsp[0]));}
 #line 2319 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
+  case 87:
+#line 575 "src/parser.y" /* yacc.c:1646  */
+    {(yyval) = new TreeNode(lineno, NODE_OP); (yyval)->optype = OP_DIV; (yyval)->addChild((yyvsp[-2])); (yyval)->addChild((yyvsp[0]));}
+#line 2325 "src/parser.cpp" /* yacc.c:1646  */
+    break;
+
+  case 88:
+#line 576 "src/parser.y" /* yacc.c:1646  */
+    {(yyval) = new TreeNode(lineno, NODE_OP); (yyval)->optype = OP_MOD; (yyval)->addChild((yyvsp[-2])); (yyval)->addChild((yyvsp[0]));}
+#line 2331 "src/parser.cpp" /* yacc.c:1646  */
+    break;
+
+  case 89:
+#line 581 "src/parser.y" /* yacc.c:1646  */
+    {(yyval) = (yyvsp[0]);}
+#line 2337 "src/parser.cpp" /* yacc.c:1646  */
+    break;
+
+  case 90:
+#line 582 "src/parser.y" /* yacc.c:1646  */
+    {(yyval) = new TreeNode(lineno, NODE_OP); (yyval)->optype = OP_NOT; (yyval)->addChild((yyvsp[0]));}
+#line 2343 "src/parser.cpp" /* yacc.c:1646  */
+    break;
+
+  case 91:
+#line 583 "src/parser.y" /* yacc.c:1646  */
+    {(yyval) = new TreeNode(lineno, NODE_OP); (yyval)->optype = OP_POS; (yyval)->addChild((yyvsp[0]));}
+#line 2349 "src/parser.cpp" /* yacc.c:1646  */
+    break;
+
+  case 92:
+#line 584 "src/parser.y" /* yacc.c:1646  */
+    {(yyval) = new TreeNode(lineno, NODE_OP); (yyval)->optype = OP_NAG; (yyval)->addChild((yyvsp[0]));}
+#line 2355 "src/parser.cpp" /* yacc.c:1646  */
+    break;
+
+  case 93:
+#line 585 "src/parser.y" /* yacc.c:1646  */
+    {(yyval) = new TreeNode(lineno, NODE_OP); (yyval)->optype = OP_INC; (yyval)->addChild((yyvsp[-1]));}
+#line 2361 "src/parser.cpp" /* yacc.c:1646  */
+    break;
+
+  case 94:
+#line 586 "src/parser.y" /* yacc.c:1646  */
+    {(yyval) = new TreeNode(lineno, NODE_OP); (yyval)->optype = OP_DEC; (yyval)->addChild((yyvsp[-1]));}
+#line 2367 "src/parser.cpp" /* yacc.c:1646  */
+    break;
+
+  case 95:
+#line 591 "src/parser.y" /* yacc.c:1646  */
+    {(yyval) = (yyvsp[0]);}
+#line 2373 "src/parser.cpp" /* yacc.c:1646  */
+    break;
+
+  case 96:
+#line 592 "src/parser.y" /* yacc.c:1646  */
+    {(yyval) = (yyvsp[-1]);}
+#line 2379 "src/parser.cpp" /* yacc.c:1646  */
+    break;
+
+  case 97:
+#line 593 "src/parser.y" /* yacc.c:1646  */
+    {(yyval) = (yyvsp[-1]);}
+#line 2385 "src/parser.cpp" /* yacc.c:1646  */
+    break;
+
   case 98:
-#line 528 "src/parser.y" /* yacc.c:1646  */
+#line 594 "src/parser.y" /* yacc.c:1646  */
     {
 	(yyval) = new TreeNode(lineno, NODE_FUNCALL);
 	(yyval)->addChild((yyvsp[-3]));
@@ -2328,11 +2394,11 @@ yyreduce:
 		cout << "# $ reduce function call at scope : " << presentScope << ", at line " << lineno << endl;
 	#endif
   }
-#line 2332 "src/parser.cpp" /* yacc.c:1646  */
+#line 2398 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
   case 99:
-#line 536 "src/parser.y" /* yacc.c:1646  */
+#line 602 "src/parser.y" /* yacc.c:1646  */
     {
 	(yyval) = new TreeNode(lineno, NODE_FUNCALL);
 	(yyval)->addChild((yyvsp[-2]));
@@ -2341,101 +2407,101 @@ yyreduce:
 		cout << "# $ reduce function call at scope : " << presentScope << ", at line " << lineno << endl;
 	#endif
   }
-#line 2345 "src/parser.cpp" /* yacc.c:1646  */
-    break;
-
-  case 100:
-#line 544 "src/parser.y" /* yacc.c:1646  */
-    {(yyval) = new TreeNode(lineno, NODE_EXPR); (yyval)->addChild((yyvsp[0]));}
-#line 2351 "src/parser.cpp" /* yacc.c:1646  */
-    break;
-
-  case 101:
-#line 549 "src/parser.y" /* yacc.c:1646  */
-    {(yyval) = new TreeNode(lineno, NODE_VARLIST); (yyval)->addChild((yyvsp[0]));}
-#line 2357 "src/parser.cpp" /* yacc.c:1646  */
-    break;
-
-  case 102:
-#line 550 "src/parser.y" /* yacc.c:1646  */
-    {(yyval) = (yyvsp[-2]); (yyval)->addChild((yyvsp[0]));}
-#line 2363 "src/parser.cpp" /* yacc.c:1646  */
-    break;
-
-  case 103:
-#line 555 "src/parser.y" /* yacc.c:1646  */
-    {(yyval) = (yyvsp[0]);}
-#line 2369 "src/parser.cpp" /* yacc.c:1646  */
-    break;
-
-  case 104:
-#line 556 "src/parser.y" /* yacc.c:1646  */
-    {(yyval) = new TreeNode(lineno, NODE_OP); (yyval)->optype = OP_OR; (yyval)->addChild((yyvsp[-2])); (yyval)->addChild((yyvsp[0]));}
-#line 2375 "src/parser.cpp" /* yacc.c:1646  */
-    break;
-
-  case 105:
-#line 561 "src/parser.y" /* yacc.c:1646  */
-    {(yyval) = (yyvsp[0]);}
-#line 2381 "src/parser.cpp" /* yacc.c:1646  */
-    break;
-
-  case 106:
-#line 562 "src/parser.y" /* yacc.c:1646  */
-    {(yyval) = new TreeNode(lineno, NODE_OP); (yyval)->optype = OP_AND; (yyval)->addChild((yyvsp[-2])); (yyval)->addChild((yyvsp[0]));}
-#line 2387 "src/parser.cpp" /* yacc.c:1646  */
-    break;
-
-  case 107:
-#line 567 "src/parser.y" /* yacc.c:1646  */
-    {(yyval) = (yyvsp[0]);}
-#line 2393 "src/parser.cpp" /* yacc.c:1646  */
-    break;
-
-  case 108:
-#line 568 "src/parser.y" /* yacc.c:1646  */
-    {(yyval) = new TreeNode(lineno, NODE_OP); (yyval)->optype = OP_EQ; (yyval)->addChild((yyvsp[-2])); (yyval)->addChild((yyvsp[0]));}
-#line 2399 "src/parser.cpp" /* yacc.c:1646  */
-    break;
-
-  case 109:
-#line 569 "src/parser.y" /* yacc.c:1646  */
-    {(yyval) = new TreeNode(lineno, NODE_OP); (yyval)->optype = OP_NEQ; (yyval)->addChild((yyvsp[-2])); (yyval)->addChild((yyvsp[0]));}
-#line 2405 "src/parser.cpp" /* yacc.c:1646  */
-    break;
-
-  case 110:
-#line 574 "src/parser.y" /* yacc.c:1646  */
-    {(yyval) = (yyvsp[0]);}
 #line 2411 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
-  case 111:
-#line 575 "src/parser.y" /* yacc.c:1646  */
-    {(yyval) = new TreeNode(lineno, NODE_OP); (yyval)->optype = OP_GRA; (yyval)->addChild((yyvsp[-2])); (yyval)->addChild((yyvsp[0]));}
+  case 100:
+#line 610 "src/parser.y" /* yacc.c:1646  */
+    {(yyval) = new TreeNode(lineno, NODE_EXPR); (yyval)->addChild((yyvsp[0]));}
 #line 2417 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
-  case 112:
-#line 576 "src/parser.y" /* yacc.c:1646  */
-    {(yyval) = new TreeNode(lineno, NODE_OP); (yyval)->optype = OP_LES; (yyval)->addChild((yyvsp[-2])); (yyval)->addChild((yyvsp[0]));}
+  case 101:
+#line 615 "src/parser.y" /* yacc.c:1646  */
+    {(yyval) = new TreeNode(lineno, NODE_VARLIST); (yyval)->addChild((yyvsp[0]));}
 #line 2423 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
-  case 113:
-#line 577 "src/parser.y" /* yacc.c:1646  */
-    {(yyval) = new TreeNode(lineno, NODE_OP); (yyval)->optype = OP_GRAEQ; (yyval)->addChild((yyvsp[-2])); (yyval)->addChild((yyvsp[0]));}
+  case 102:
+#line 616 "src/parser.y" /* yacc.c:1646  */
+    {(yyval) = (yyvsp[-2]); (yyval)->addChild((yyvsp[0]));}
 #line 2429 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
-  case 114:
-#line 578 "src/parser.y" /* yacc.c:1646  */
-    {(yyval) = new TreeNode(lineno, NODE_OP); (yyval)->optype = OP_LESEQ; (yyval)->addChild((yyvsp[-2])); (yyval)->addChild((yyvsp[0]));}
+  case 103:
+#line 621 "src/parser.y" /* yacc.c:1646  */
+    {(yyval) = (yyvsp[0]);}
 #line 2435 "src/parser.cpp" /* yacc.c:1646  */
     break;
 
+  case 104:
+#line 622 "src/parser.y" /* yacc.c:1646  */
+    {(yyval) = new TreeNode(lineno, NODE_OP); (yyval)->optype = OP_OR; (yyval)->addChild((yyvsp[-2])); (yyval)->addChild((yyvsp[0]));}
+#line 2441 "src/parser.cpp" /* yacc.c:1646  */
+    break;
 
-#line 2439 "src/parser.cpp" /* yacc.c:1646  */
+  case 105:
+#line 627 "src/parser.y" /* yacc.c:1646  */
+    {(yyval) = (yyvsp[0]);}
+#line 2447 "src/parser.cpp" /* yacc.c:1646  */
+    break;
+
+  case 106:
+#line 628 "src/parser.y" /* yacc.c:1646  */
+    {(yyval) = new TreeNode(lineno, NODE_OP); (yyval)->optype = OP_AND; (yyval)->addChild((yyvsp[-2])); (yyval)->addChild((yyvsp[0]));}
+#line 2453 "src/parser.cpp" /* yacc.c:1646  */
+    break;
+
+  case 107:
+#line 633 "src/parser.y" /* yacc.c:1646  */
+    {(yyval) = (yyvsp[0]);}
+#line 2459 "src/parser.cpp" /* yacc.c:1646  */
+    break;
+
+  case 108:
+#line 634 "src/parser.y" /* yacc.c:1646  */
+    {(yyval) = new TreeNode(lineno, NODE_OP); (yyval)->optype = OP_EQ; (yyval)->addChild((yyvsp[-2])); (yyval)->addChild((yyvsp[0]));}
+#line 2465 "src/parser.cpp" /* yacc.c:1646  */
+    break;
+
+  case 109:
+#line 635 "src/parser.y" /* yacc.c:1646  */
+    {(yyval) = new TreeNode(lineno, NODE_OP); (yyval)->optype = OP_NEQ; (yyval)->addChild((yyvsp[-2])); (yyval)->addChild((yyvsp[0]));}
+#line 2471 "src/parser.cpp" /* yacc.c:1646  */
+    break;
+
+  case 110:
+#line 640 "src/parser.y" /* yacc.c:1646  */
+    {(yyval) = (yyvsp[0]);}
+#line 2477 "src/parser.cpp" /* yacc.c:1646  */
+    break;
+
+  case 111:
+#line 641 "src/parser.y" /* yacc.c:1646  */
+    {(yyval) = new TreeNode(lineno, NODE_OP); (yyval)->optype = OP_GRA; (yyval)->addChild((yyvsp[-2])); (yyval)->addChild((yyvsp[0]));}
+#line 2483 "src/parser.cpp" /* yacc.c:1646  */
+    break;
+
+  case 112:
+#line 642 "src/parser.y" /* yacc.c:1646  */
+    {(yyval) = new TreeNode(lineno, NODE_OP); (yyval)->optype = OP_LES; (yyval)->addChild((yyvsp[-2])); (yyval)->addChild((yyvsp[0]));}
+#line 2489 "src/parser.cpp" /* yacc.c:1646  */
+    break;
+
+  case 113:
+#line 643 "src/parser.y" /* yacc.c:1646  */
+    {(yyval) = new TreeNode(lineno, NODE_OP); (yyval)->optype = OP_GRAEQ; (yyval)->addChild((yyvsp[-2])); (yyval)->addChild((yyvsp[0]));}
+#line 2495 "src/parser.cpp" /* yacc.c:1646  */
+    break;
+
+  case 114:
+#line 644 "src/parser.y" /* yacc.c:1646  */
+    {(yyval) = new TreeNode(lineno, NODE_OP); (yyval)->optype = OP_LESEQ; (yyval)->addChild((yyvsp[-2])); (yyval)->addChild((yyvsp[0]));}
+#line 2501 "src/parser.cpp" /* yacc.c:1646  */
+    break;
+
+
+#line 2505 "src/parser.cpp" /* yacc.c:1646  */
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -2663,7 +2729,7 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 581 "src/parser.y" /* yacc.c:1906  */
+#line 647 "src/parser.y" /* yacc.c:1906  */
 
 
 int yyerror(char const * message)

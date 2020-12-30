@@ -51,8 +51,11 @@ public:
     bool constvar;
     ValueType type;
     Type(ValueType valueType);
+    // 将b复制到自己中
+    void copy(Type* a);
 
-public:  
+public:
+    int pointLevel = 0;
 
     unsigned short paramNum; // for function
     Type* paramType[MAX_PARAM];
@@ -63,11 +66,11 @@ public:
     unsigned int dim;   // for array
     ValueType elementType;
     int dimSize[MAX_ARRAY_DIM];
+    // 下一次使用下标运算符会访问的维度
+    unsigned int visitDim = 0;
 
     int getSize();
 
-public:
-    ValueType* sibling; 
 public:
     string getTypeInfo();
     string getTypeInfo(ValueType type);

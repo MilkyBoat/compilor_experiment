@@ -48,14 +48,14 @@ Grammar
    20 identifier: IDENTIFIER
 
    21 declCompIdentifier: pDeclIdentifier
-   22                   | constArrayIdentifier
+   22                   | arrayDeclIdentifier
 
    23 pDeclIdentifier: declIdentifier
    24                | MUL pDeclIdentifier
    25                | ADDR pDeclIdentifier
 
-   26 constArrayIdentifier: pDeclIdentifier LBRACKET INTEGER RBRACKET
-   27                     | constArrayIdentifier LBRACKET INTEGER RBRACKET
+   26 arrayDeclIdentifier: pDeclIdentifier LBRACKET INTEGER RBRACKET
+   27                    | arrayDeclIdentifier LBRACKET INTEGER RBRACKET
 
    28 declIdentifier: IDENTIFIER
 
@@ -68,7 +68,7 @@ Grammar
    33          | constDefs COMMA constDef
 
    34 constDef: pDeclIdentifier ASSIGN literalConst
-   35         | constArrayIdentifier ASSIGN LBRACE ArrayInitVal RBRACE
+   35         | arrayDeclIdentifier ASSIGN LBRACE ArrayInitVal RBRACE
 
    36 ArrayInitVal: literalConst
    37             | ArrayInitVal COMMA literalConst
@@ -80,7 +80,7 @@ Grammar
 
    41 varDef: declCompIdentifier
    42       | declCompIdentifier ASSIGN expr
-   43       | constArrayIdentifier ASSIGN LBRACE ArrayInitVal RBRACE
+   43       | arrayDeclIdentifier ASSIGN LBRACE ArrayInitVal RBRACE
 
    44 funcDef: basicType pDeclIdentifier funcLPAREN funcFParams RPAREN LBRACE blockItems RBRACE
    45        | basicType pDeclIdentifier funcLPAREN RPAREN LBRACE blockItems RBRACE
@@ -254,7 +254,7 @@ declCompIdentifier (59)
     on left: 21 22, on right: 41 42
 pDeclIdentifier (60)
     on left: 23 24 25, on right: 21 24 25 26 34 44 45 49
-constArrayIdentifier (61)
+arrayDeclIdentifier (61)
     on left: 26 27, on right: 22 27 35 43
 declIdentifier (62)
     on left: 28, on right: 23
@@ -416,12 +416,12 @@ State 7
     MUL         shift, and go to state 17
     IDENTIFIER  shift, and go to state 18
 
-    declCompIdentifier    go to state 19
-    pDeclIdentifier       go to state 20
-    constArrayIdentifier  go to state 21
-    declIdentifier        go to state 22
-    varDefs               go to state 23
-    varDef                go to state 24
+    declCompIdentifier   go to state 19
+    pDeclIdentifier      go to state 20
+    arrayDeclIdentifier  go to state 21
+    declIdentifier       go to state 22
+    varDefs              go to state 23
+    varDef               go to state 24
 
 
 State 8
@@ -460,11 +460,11 @@ State 12
     MUL         shift, and go to state 17
     IDENTIFIER  shift, and go to state 18
 
-    pDeclIdentifier       go to state 25
-    constArrayIdentifier  go to state 26
-    declIdentifier        go to state 22
-    constDefs             go to state 27
-    constDef              go to state 28
+    pDeclIdentifier      go to state 25
+    arrayDeclIdentifier  go to state 26
+    declIdentifier       go to state 22
+    constDefs            go to state 27
+    constDef             go to state 28
 
 
 State 13
@@ -532,7 +532,7 @@ State 19
 State 20
 
    21 declCompIdentifier: pDeclIdentifier .
-   26 constArrayIdentifier: pDeclIdentifier . LBRACKET INTEGER RBRACKET
+   26 arrayDeclIdentifier: pDeclIdentifier . LBRACKET INTEGER RBRACKET
    44 funcDef: basicType pDeclIdentifier . funcLPAREN funcFParams RPAREN LBRACE blockItems RBRACE
    45        | basicType pDeclIdentifier . funcLPAREN RPAREN LBRACE blockItems RBRACE
 
@@ -546,9 +546,9 @@ State 20
 
 State 21
 
-   22 declCompIdentifier: constArrayIdentifier .
-   27 constArrayIdentifier: constArrayIdentifier . LBRACKET INTEGER RBRACKET
-   43 varDef: constArrayIdentifier . ASSIGN LBRACE ArrayInitVal RBRACE
+   22 declCompIdentifier: arrayDeclIdentifier .
+   27 arrayDeclIdentifier: arrayDeclIdentifier . LBRACKET INTEGER RBRACKET
+   43 varDef: arrayDeclIdentifier . ASSIGN LBRACE ArrayInitVal RBRACE
 
     ASSIGN    shift, and go to state 35
     LBRACKET  shift, and go to state 36
@@ -582,7 +582,7 @@ State 24
 
 State 25
 
-   26 constArrayIdentifier: pDeclIdentifier . LBRACKET INTEGER RBRACKET
+   26 arrayDeclIdentifier: pDeclIdentifier . LBRACKET INTEGER RBRACKET
    34 constDef: pDeclIdentifier . ASSIGN literalConst
 
     ASSIGN    shift, and go to state 39
@@ -591,8 +591,8 @@ State 25
 
 State 26
 
-   27 constArrayIdentifier: constArrayIdentifier . LBRACKET INTEGER RBRACKET
-   35 constDef: constArrayIdentifier . ASSIGN LBRACE ArrayInitVal RBRACE
+   27 arrayDeclIdentifier: arrayDeclIdentifier . LBRACKET INTEGER RBRACKET
+   35 constDef: arrayDeclIdentifier . ASSIGN LBRACE ArrayInitVal RBRACE
 
     ASSIGN    shift, and go to state 40
     LBRACKET  shift, and go to state 36
@@ -665,7 +665,7 @@ State 32
 
 State 33
 
-   26 constArrayIdentifier: pDeclIdentifier LBRACKET . INTEGER RBRACKET
+   26 arrayDeclIdentifier: pDeclIdentifier LBRACKET . INTEGER RBRACKET
 
     INTEGER  shift, and go to state 64
 
@@ -688,14 +688,14 @@ State 34
 
 State 35
 
-   43 varDef: constArrayIdentifier ASSIGN . LBRACE ArrayInitVal RBRACE
+   43 varDef: arrayDeclIdentifier ASSIGN . LBRACE ArrayInitVal RBRACE
 
     LBRACE  shift, and go to state 69
 
 
 State 36
 
-   27 constArrayIdentifier: constArrayIdentifier LBRACKET . INTEGER RBRACKET
+   27 arrayDeclIdentifier: arrayDeclIdentifier LBRACKET . INTEGER RBRACKET
 
     INTEGER  shift, and go to state 70
 
@@ -715,11 +715,11 @@ State 38
     MUL         shift, and go to state 17
     IDENTIFIER  shift, and go to state 18
 
-    declCompIdentifier    go to state 19
-    pDeclIdentifier       go to state 71
-    constArrayIdentifier  go to state 21
-    declIdentifier        go to state 22
-    varDef                go to state 72
+    declCompIdentifier   go to state 19
+    pDeclIdentifier      go to state 71
+    arrayDeclIdentifier  go to state 21
+    declIdentifier       go to state 22
+    varDef               go to state 72
 
 
 State 39
@@ -736,7 +736,7 @@ State 39
 
 State 40
 
-   35 constDef: constArrayIdentifier ASSIGN . LBRACE ArrayInitVal RBRACE
+   35 constDef: arrayDeclIdentifier ASSIGN . LBRACE ArrayInitVal RBRACE
 
     LBRACE  shift, and go to state 74
 
@@ -756,10 +756,10 @@ State 42
     MUL         shift, and go to state 17
     IDENTIFIER  shift, and go to state 18
 
-    pDeclIdentifier       go to state 25
-    constArrayIdentifier  go to state 26
-    declIdentifier        go to state 22
-    constDef              go to state 75
+    pDeclIdentifier      go to state 25
+    arrayDeclIdentifier  go to state 26
+    declIdentifier       go to state 22
+    constDef             go to state 75
 
 
 State 43
@@ -1043,7 +1043,7 @@ State 63
 
 State 64
 
-   26 constArrayIdentifier: pDeclIdentifier LBRACKET INTEGER . RBRACKET
+   26 arrayDeclIdentifier: pDeclIdentifier LBRACKET INTEGER . RBRACKET
 
     RBRACKET  shift, and go to state 105
 
@@ -1085,7 +1085,7 @@ State 68
 
 State 69
 
-   43 varDef: constArrayIdentifier ASSIGN LBRACE . ArrayInitVal RBRACE
+   43 varDef: arrayDeclIdentifier ASSIGN LBRACE . ArrayInitVal RBRACE
 
     INTEGER  shift, and go to state 50
     CHAR     shift, and go to state 51
@@ -1098,7 +1098,7 @@ State 69
 
 State 70
 
-   27 constArrayIdentifier: constArrayIdentifier LBRACKET INTEGER . RBRACKET
+   27 arrayDeclIdentifier: arrayDeclIdentifier LBRACKET INTEGER . RBRACKET
 
     RBRACKET  shift, and go to state 112
 
@@ -1106,7 +1106,7 @@ State 70
 State 71
 
    21 declCompIdentifier: pDeclIdentifier .
-   26 constArrayIdentifier: pDeclIdentifier . LBRACKET INTEGER RBRACKET
+   26 arrayDeclIdentifier: pDeclIdentifier . LBRACKET INTEGER RBRACKET
 
     LBRACKET  shift, and go to state 33
 
@@ -1129,7 +1129,7 @@ State 73
 
 State 74
 
-   35 constDef: constArrayIdentifier ASSIGN LBRACE . ArrayInitVal RBRACE
+   35 constDef: arrayDeclIdentifier ASSIGN LBRACE . ArrayInitVal RBRACE
 
     INTEGER  shift, and go to state 50
     CHAR     shift, and go to state 51
@@ -1652,9 +1652,9 @@ State 104
 
 State 105
 
-   26 constArrayIdentifier: pDeclIdentifier LBRACKET INTEGER RBRACKET .
+   26 arrayDeclIdentifier: pDeclIdentifier LBRACKET INTEGER RBRACKET .
 
-    $default  reduce using rule 26 (constArrayIdentifier)
+    $default  reduce using rule 26 (arrayDeclIdentifier)
 
 
 State 106
@@ -1747,7 +1747,7 @@ State 110
 State 111
 
    37 ArrayInitVal: ArrayInitVal . COMMA literalConst
-   43 varDef: constArrayIdentifier ASSIGN LBRACE ArrayInitVal . RBRACE
+   43 varDef: arrayDeclIdentifier ASSIGN LBRACE ArrayInitVal . RBRACE
 
     COMMA   shift, and go to state 160
     RBRACE  shift, and go to state 161
@@ -1755,14 +1755,14 @@ State 111
 
 State 112
 
-   27 constArrayIdentifier: constArrayIdentifier LBRACKET INTEGER RBRACKET .
+   27 arrayDeclIdentifier: arrayDeclIdentifier LBRACKET INTEGER RBRACKET .
 
-    $default  reduce using rule 27 (constArrayIdentifier)
+    $default  reduce using rule 27 (arrayDeclIdentifier)
 
 
 State 113
 
-   35 constDef: constArrayIdentifier ASSIGN LBRACE ArrayInitVal . RBRACE
+   35 constDef: arrayDeclIdentifier ASSIGN LBRACE ArrayInitVal . RBRACE
    37 ArrayInitVal: ArrayInitVal . COMMA literalConst
 
     COMMA   shift, and go to state 160
@@ -2232,12 +2232,12 @@ State 147
     MUL         shift, and go to state 17
     IDENTIFIER  shift, and go to state 18
 
-    declCompIdentifier    go to state 19
-    pDeclIdentifier       go to state 71
-    constArrayIdentifier  go to state 21
-    declIdentifier        go to state 22
-    varDefs               go to state 23
-    varDef                go to state 24
+    declCompIdentifier   go to state 19
+    pDeclIdentifier      go to state 71
+    arrayDeclIdentifier  go to state 21
+    declIdentifier       go to state 22
+    varDefs              go to state 23
+    varDef               go to state 24
 
 
 State 148
@@ -2479,14 +2479,14 @@ State 160
 
 State 161
 
-   43 varDef: constArrayIdentifier ASSIGN LBRACE ArrayInitVal RBRACE .
+   43 varDef: arrayDeclIdentifier ASSIGN LBRACE ArrayInitVal RBRACE .
 
     $default  reduce using rule 43 (varDef)
 
 
 State 162
 
-   35 constDef: constArrayIdentifier ASSIGN LBRACE ArrayInitVal RBRACE .
+   35 constDef: arrayDeclIdentifier ASSIGN LBRACE ArrayInitVal RBRACE .
 
     $default  reduce using rule 35 (constDef)
 
@@ -2913,12 +2913,12 @@ State 194
     MUL         shift, and go to state 17
     IDENTIFIER  shift, and go to state 18
 
-    declCompIdentifier    go to state 19
-    pDeclIdentifier       go to state 71
-    constArrayIdentifier  go to state 21
-    declIdentifier        go to state 22
-    varDefs               go to state 199
-    varDef                go to state 24
+    declCompIdentifier   go to state 19
+    pDeclIdentifier      go to state 71
+    arrayDeclIdentifier  go to state 21
+    declIdentifier       go to state 22
+    varDefs              go to state 199
+    varDef               go to state 24
 
 
 State 195

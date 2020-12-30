@@ -3,9 +3,29 @@
 Type::Type(ValueType valueType) {
     this->type = valueType;
     this->paramNum = 0;
-    constvar = false;
+    this->constvar = false;
     this->retType = nullptr;
     this->dim = 0;
+    this->visitDim = 0;
+}
+
+void Type::copy(Type* a) {
+    this->type = a->type;
+    this->constvar = a->constvar;
+    if (a->paramNum) {
+        this->paramNum = a->paramNum;
+        for (unsigned short i=0;i<a->paramNum;i++) {
+            this->paramType[i] = a->paramType[i];
+        }
+        this->retType = a->retType;
+    }
+    if (a->dim) {
+        this->dim = a->dim;
+        this->elementType = a->elementType;
+        for (unsigned int i=0;i<a->dim;i++) {
+            this->dimSize[i] = a->dimSize[i];
+        }
+    }
 }
 
 string Type::getTypeInfo() {
@@ -49,7 +69,7 @@ void Type::addRet(Type* t){
 }
 
 int Type::getSize() {
-    int size = 0;
+    int size = 1;
     int eleSize;
     switch (type)
     {
@@ -63,8 +83,8 @@ int Type::getSize() {
         eleSize = this->getSize();
         this->type = VALUE_ARRAY;
         for (unsigned int i = 0; i < dim; i++)
-            size += eleSize * dimSize[i];
-        return size;
+            size *= dimSize[i];
+        return eleSize * size;
     default:
         return 0;
     }

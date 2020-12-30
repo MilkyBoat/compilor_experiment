@@ -127,7 +127,12 @@ public:
 	void get_label();
 
 	void genCode();
-	// 传入标识符结点指针，返回它在汇编中的变量表示
+
+	// 传入标识符结点或OP_INDEX数组下标结点指针，
+	// 返回它在汇编中的变量表示。
+	// 注意：如果传入下标运算符结点，务必保证
+	// 此时的eax寄存器已经完成了偏移量的计算，
+	// 即先执行了OP_INDEX结点的右子树的genCode()
 	string getVarNameCode(TreeNode* p);
 
 public:

@@ -32,7 +32,7 @@ map<pair<string, string>, TreeNode *> idList;
 map<string, int> strList;
 
 // map <作用域+变量名， 变量相对于ebp偏移量> 局部变量表，在每次函数定义前清空
-// <"a", "-12"> 表示栈上第一个分配的局部变量（前3个4字节为bx,cx,dx备份用，始终保留）
+// <"11a", "-12"> 表示第一个函数的栈上第一个分配的局部变量（前3个4字节为bx,cx,dx备份用，始终保留）
 map<string, int> LocalVarList;
 // 栈上为局部变量分配的空间总大小，在return时进行清理
 int stackSize;
@@ -94,17 +94,23 @@ int TreeNode::getChildNum() {
 }
 
 int TreeNode::getVal() {
-    switch (type->type)
-    {
-    case VALUE_BOOL:
-        return (b_val ? 1 : 0);
-    case VALUE_CHAR:
-        return (int)ch_val;
-    case VALUE_INT:
-        return int_val;
-    default:
-        return 0;
+    if (nodeType == NODE_CONST) {
+        switch (type->type)
+        {
+        case VALUE_BOOL:
+            return (b_val ? 1 : 0);
+        case VALUE_CHAR:
+            return (int)ch_val;
+        case VALUE_INT:
+            return int_val;
+        default:
+            return 0;
+        }
     }
+    else if (child->nodeType == NODE_CONST) {
+        return child->getVal();
+    }
+    return 0;
 }
 
 void TreeNode::genNodeId() {
@@ -118,6 +124,15 @@ void TreeNode::genNodeId() {
 
 void TreeNode::typeCheck() {
 
+#ifdef typeCheck_debug
+            cout << "# Type check reach @" << nodeID << endl;
+#endif
+
+    // 类型检查时记录循环层数，为continue和break提供循环外错误检查
+    if (nodeType == NODE_STMT && (stype == STMT_FOR || stype == STMT_WHILE)) {
+        cycleStackTop++;
+    }
+
     // 先遍历子节点进行type计算
     TreeNode *p = this->child;
     while (p != nullptr) {
@@ -125,21 +140,31 @@ void TreeNode::typeCheck() {
         p = p->sibling;
     }
 
+#ifdef typeCheck_debug
+            cout << "# Type check start @" << nodeID << endl;
+#endif
+
     // 分情况检查类型错误并对部分情况作强制类型转换
     switch (this->nodeType)
     {
     case NODE_FUNCALL:
         // 函数调用要求标识符是一个函数，且形参表与函数定义一致
         if (child->type->type == COMPOSE_FUNCTION) {
-            if (child->var_name == "printf" || child->var_name == "scanf")
+            if (child->var_name == "printf" || child->var_name == "scanf") {
+                if (child->sibling->child->type->type != VALUE_STRING) {
+                    cout << "Wrong type: paramater type doesn`t fit function " << child->var_name
+                         << "need <string>, got " << child->sibling->child->type->getTypeInfo()
+                         << " , at line " << lineno << endl;
+                    typeError = true;
+                }
                 break;
+            }
             if (child->sibling->getChildNum() == child->type->paramNum) {
                 int paracnt = 0;
                 TreeNode *param = child->sibling->child;
                 while (param!=nullptr) {
                     if (child->type->paramType[paracnt] != TYPE_NONE // 无类型表示支持任意类型，在scanf和printf上使用
-                        && child->type->paramType[paracnt] != param->type 
-                        && child->pointLevel == param->pointLevel) {
+                        && child->type->paramType[paracnt]->type != param->type->type) {
                         cout << "Wrong type: paramater type doesn`t fit function " << child->var_name
                                 << " got " << param->type->getTypeInfo()
                                 << " need " << child->type->paramType[paracnt]->getTypeInfo()
@@ -159,11 +184,19 @@ void TreeNode::typeCheck() {
             cout << "Wrong type: identifier " << child->var_name << " isn`t a function, at line " << lineno << endl;
             typeError = true;
         }
+        if (!type)
+            this->type = new Type(NOTYPE);
+        this->type->copy(child->type->retType);
         break;
     case NODE_STMT:
         // statement无类型
         this->type = TYPE_NONE;
         switch (stype) {
+        case STMT_FUNCDECL:
+            if (child->type->type == COMPOSE_FUNCTION) {
+
+            }
+            break;
         case STMT_IF:
         case STMT_IFELSE:
         case STMT_WHILE:
@@ -179,7 +212,7 @@ void TreeNode::typeCheck() {
                     child->sibling->type = TYPE_INT;
                     child->sibling->int_val = 0;
                     child = eq;
-                    cout << "Type Cast from <int> to <bool> because of a \""
+                    cout << "# Type Cast from <int> to <bool> because of a \""
                          << this->sType2String(stype)
                          << "\" statement, at line " << child->lineno << endl;
                 }
@@ -189,11 +222,12 @@ void TreeNode::typeCheck() {
                     typeError = true;
                 }
             }
+            cycleStackTop--;
             break;
         case STMT_FOR:
             if (child->sibling->type->type != VALUE_BOOL) {
                 if (child->sibling->type->type == VALUE_INT) {
-                    cout << "Type Cast from <int> to <bool> because of a \"for\" statement, at line "
+                    cout << "# Type Cast from <int> to <bool> because of a \"for\" statement, at line "
                          << child->sibling->lineno << endl;
                 }
                 else {
@@ -201,6 +235,15 @@ void TreeNode::typeCheck() {
                          << ", at line " << child->sibling->lineno << endl;
                     typeError = true;
                 }
+            }
+            cycleStackTop--;
+            break;
+        case STMT_BREAK:
+        case STMT_CONTINUE:
+            if (cycleStackTop < 0) {
+                cout << "Error cycle control statement: " << sType2String(stype)
+                     << ", outside a cycle, at line " << child->sibling->lineno << endl;
+                typeError = true;
             }
             break;
         default:
@@ -307,6 +350,11 @@ void TreeNode::typeCheck() {
     default:
         break;
     }
+    
+#ifdef typeCheck_debug
+            cout << "# Type check end @" << nodeID << endl;
+#endif
+
 }
 
 void TreeNode::genCode() {
@@ -327,7 +375,7 @@ void TreeNode::genCode() {
             p = p->sibling;
         }
         cout << "\t.ident\t" << _ident << endl
-             << "\t.section\t" << _section << endl;
+             << "\t.section " << _section << endl;
         break;
     case NODE_FUNCALL:
         // 反转链表
@@ -421,14 +469,14 @@ void TreeNode::genCode() {
         case STMT_FOR:
             get_label();
             cycleStack[++cycleStackTop] = this;
-            cout << label.begin_label << ":" << endl;
             this->child->genCode();
-            cout << label.next_label << ":" << endl;  
+            cout << label.begin_label << ":" << endl;
             this->child->sibling->genCode();
             cout << label.true_label << ":" << endl;
             this->child->sibling->sibling->sibling->genCode();
+            cout << label.next_label << ":" << endl;
             this->child->sibling->sibling->genCode();
-            cout << "\tjmp\t\t" << label.next_label << endl;
+            cout << "\tjmp\t\t" << label.begin_label << endl;
             cout << label.false_label << ":" << endl; 
             cycleStackTop--;
             break;
@@ -461,7 +509,6 @@ void TreeNode::genCode() {
             if (child->pointLevel == 0)
                 cout << "\tmovl\t" << varCode << ", %eax" << endl;
             else if (child->pointLevel < 0) { // &前缀的变量
-                assert(child->pointLevel == -1); // 只能一次&一次 TODO: 这个东西应该在类型检查的时候不允许连续取地址符号
                 cout << "\tleal\t" << varCode << ", %eax" << endl;
             }
             else {
@@ -470,6 +517,10 @@ void TreeNode::genCode() {
                     cout << "\tmovl\t(%eax), %eax" << endl;
                 }
             }
+        }
+        else if (child->nodeType == NODE_OP && child->optype == OP_INDEX) {
+            // 数组
+            child->genCode();
         }
         else {
             // 立即数、常量字符串
@@ -585,6 +636,7 @@ void TreeNode::genCode() {
         case OP_ADDASSIGN:
             varCode = getVarNameCode(p);
             p->sibling->genCode();
+            
             cout << "\tmovl\t" << varCode << ", %ebx" << endl
                  << "\taddl\t%ebx, %eax" << endl
                  << "\tmovl\t%eax, " << varCode << endl;
@@ -616,7 +668,15 @@ void TreeNode::genCode() {
         case OP_DECLASSIGN:
         case OP_ASSIGN:
             p->sibling->genCode();
-            cout << "\tmovl\t%eax, " << getVarNameCode(p) << endl;
+            if (p->nodeType == NODE_VAR)
+                cout << "\tmovl\t%eax, " << getVarNameCode(p) << endl;
+            else {  // 左值是数组
+                cout << "\tpushl\t%eax" << endl;
+                // 计算偏移量到%eax
+                p->child->sibling->genCode();
+                cout << "\tpopl\t%ebx" << endl
+                     << "\tmovl\t%ebx, " << getVarNameCode(p) << endl;
+            }
             break;
         case OP_INC:
             varCode = getVarNameCode(p);
@@ -677,7 +737,9 @@ void TreeNode::genCode() {
                  << "\tmovl\t%edx, %eax" << endl;
             break;
         case OP_INDEX:
-            // TODO
+            // 这里只生成下标运算在右值时的代码（即按下标取数值）
+            p->sibling->genCode();
+            cout << "\tmovl\t" << getVarNameCode(this) << ", %eax" << endl;
             break;
         default:
             break;
@@ -714,7 +776,12 @@ void TreeNode::gen_var_decl() {
                         t = q->child;
                     }
                     // 遍历常变量列表，指针类型视为4字节int
-                    int varsize = ((t->pointLevel == 0) ? t->type->getSize() : 4);
+                    int varsize = ((t->type->pointLevel == 0) ? t->type->getSize() : 4);
+                    if (t->type->dim > 0) {
+                        t->type->elementType = p->child->type->type;
+                        t->type->type = VALUE_ARRAY;
+                        varsize = t->type->getSize();
+                    }
                     cout << "\t.globl\t" << t->var_name << endl
                          << "\t.type\t" << t->var_name << ", @object" << endl
                          << "\t.size\t" << t->var_name << ", " << varsize << endl
@@ -722,26 +789,25 @@ void TreeNode::gen_var_decl() {
                     if (q->nodeType == NODE_OP && q->optype == OP_DECLASSIGN) {
                         // 声明时赋值
                         // 只处理字面量初始化值
-                        if (t->type->type != VALUE_ARRAY) {    // 单个值                    
+                        if (t->type->dim == 0) {    // 单个值                    
                             cout << "\t.long\t" << t->sibling->getVal() << endl;
                         }
                         else {    // 数组                    
                             for (TreeNode *pe = t->sibling->child; pe != nullptr; pe = pe->sibling)
-                                cout << "\t.long\t" << pe->getVal();
+                                cout << "\t.long\t" << 4 * pe->getVal() << endl;
                         }
                     }
                     else {
                         // 声明时未赋值，默认初始化值为0
                         // 只处理字面量初始化值
-                        if (t->type->type != VALUE_ARRAY) { // 单个值
+                        if (t->type->dim == 0) { // 单个值
                             cout << "\t.long\t0" << endl;
                         }
                         else {  // 数组
-                            int size = 0;
+                            int size = 1;
                             for (unsigned int i = 0; i < t->type->dim; i++)
-                                size += 4 * t->type->dimSize[i];
-                            while (size--)
-                                cout << "\t.long\t0";
+                                size *= t->type->dimSize[i];
+                            cout << "\t.zero\t" << size << endl;
                         }
                     }
                     q = q->sibling;
@@ -792,7 +858,11 @@ void TreeNode::gen_var_decl() {
             // 声明时赋值
             if (q->nodeType == NODE_OP && q->optype == OP_DECLASSIGN)
                 t = q->child;
-            int varsize = ((t->pointLevel == 0) ? t->type->getSize() : 4);
+            int varsize = ((t->type->pointLevel == 0) ? t->type->getSize() : 4);
+            if (t->type->dim > 0) {
+                t->type->type = VALUE_ARRAY;
+                varsize = t->type->getSize();
+            }
             LocalVarList[t->var_scope + t->var_name] = stackSize;
             stackSize -= varsize;
             q = q->sibling;
@@ -912,14 +982,27 @@ void TreeNode::get_label() {
 
 string TreeNode::getVarNameCode(TreeNode* p) {
     string varCode = "";
-    if (p->var_scope == "1") {
-        // 全局变量
-        varCode = p->var_name;
+    if (p->nodeType == NODE_VAR) {
+        // 标识符
+        if (p->var_scope == "1") {
+            // 全局变量
+            varCode = p->var_name;
+        }
+        else {
+            // 局部变量（不要跨定义域访问）
+            varCode += LocalVarList[p->var_scope + p->var_name];
+            varCode += "(%ebp)";                
+        }
     }
     else {
-        // 局部变量（不要跨定义域访问）
-        varCode += LocalVarList[p->var_scope + p->var_name];
-        varCode += "(%ebp)";                
+        // 数组
+        if (p->child->var_scope == "1") {
+            varCode = p->child->var_name + "(,%eax,4)";
+        }
+        else {
+            varCode += LocalVarList[p->child->var_scope + p->child->var_name];
+            varCode += "(%ebp,%eax,4)";
+        }
     }
     return varCode;
 }
@@ -962,10 +1045,10 @@ void TreeNode::printSpecialInfo() {
             break;
         case NODE_VAR:
             cout << ",\tname: ";
-            if (this->pointLevel != 0) {
+            if (this->type->pointLevel != 0) {
                 // 为指针类型添加前缀(*和&)
-                string prefix = this->pointLevel > 0 ? "*" : "&";
-                for (int i=0; i < abs(this->pointLevel); i++)
+                string prefix = this->type->pointLevel > 0 ? "*" : "&";
+                for (int i=0; i < abs(this->type->pointLevel); i++)
                     cout << prefix;
             }
             cout << var_name << ",\tscope: ";
@@ -1066,7 +1149,7 @@ string TreeNode::opType2String(OperatorType type) {
 	case OP_ASSIGN:
 		return "assign";
 	case OP_DECLASSIGN:
-		return "assign";
+		return "assign(decl)";
 	case OP_ADDASSIGN:
 		return "add assign";
 	case OP_SUBASSIGN:

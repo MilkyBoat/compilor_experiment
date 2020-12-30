@@ -1,5 +1,5 @@
 CC := g++
-CFLAGS := -Wall -Wextra -std=c++11  # without debug
+CFLAGS := -Wall -Wextra -std=c++11 -g
 TARGET := ./main.out
 
 .PHONY: all clean main run lex yacc test debug link testscope asm asmc nasm example-code out mytest
@@ -52,7 +52,7 @@ asmc:
 	qemu-i386 asmTest.out
 
 st: 
-	./main.out test/1/22_expr_not.c > asmTest.s
+	./main.out test/2/05_multi_array.c > asmTest.s
 	gcc asmTest.s -m32 -o asmTest.out
 	qemu-i386 asmTest.out
 

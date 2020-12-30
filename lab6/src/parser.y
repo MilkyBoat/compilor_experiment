@@ -36,7 +36,7 @@
 // 赋值运算符
 %token ASSIGN PLUSASSIGN MINUSASSIGN MULASSIGN DIVASSIGN
 
-// 括号分号逗号
+// 括号分号逗号中括号
 %token SEMICOLON COMMA LPAREN RPAREN LBRACE RBRACE LBRACKET RBRACKET
 
 // 关键字
@@ -81,7 +81,11 @@ literalConst
 // ------ 复合标识符，包含指针与数组，在变量声明外使用 -----
 compIdentifier
 : pIdentifier {$$ = $1;}
-| arrayIdentifier {$$ = $1;}
+| arrayIdentifier {
+	$$ = $1;
+	// 归约完成，清除下标计数器，为下一次做准备
+	$$->child->type->visitDim = 0;
+  }
 ;
 
 // 指针标识符
@@ -91,10 +95,9 @@ pIdentifier
 | ADDR pIdentifier {
 	$$ = $2; 
 	$$->pointLevel--;
-	#ifdef POINT_DEBUG
-		cout << "# $ pIdentifier : " << $$->var_name 
-			 << ", pointlevel : " << $$->pointLevel << endl;
-	#endif
+	if ($$->pointLevel < -2) {
+		yyerror("Continuous addr operator");
+	}
   }
 ;
 
@@ -104,13 +107,62 @@ arrayIdentifier
 	$$ = new TreeNode(lineno, NODE_OP);
 	$$->optype = OP_INDEX;
 	$$->addChild($1);
-	$$->addChild($3);
+
+	// 计算数组偏移量倍数
+	int biasRate = 1;
+	for (unsigned int i = $1->type->visitDim + 1; i < $1->type->dim; i++) {
+		biasRate *= $1->type->dimSize[i];
+	}
+	TreeNode* biasNode;
+	if (biasRate == 1) {
+		// 偏移倍数为1时省略乘法结点
+		biasNode = $3;
+	}
+	else {
+		biasNode = new TreeNode(lineno, NODE_OP);
+		biasNode->optype = OP_MUL;
+		biasNode->addChild($3);
+		TreeNode* biasRateExpr = new TreeNode(lineno, NODE_EXPR);
+		TreeNode* biasRateConst = new TreeNode(lineno, NODE_CONST);
+		biasRateConst->type = TYPE_INT;
+		biasRateConst->int_val = biasRate;
+		biasRateExpr->addChild(biasRateConst);
+		biasNode->addChild(biasRateExpr);
+	}
+	$1->type->visitDim++;
+
+	$$->addChild(biasNode);
   }
 | arrayIdentifier LBRACKET expr RBRACKET {
-	$$ = new TreeNode(lineno, NODE_OP);
-	$$->optype = OP_INDEX;
-	$$->addChild($1);
-	$$->addChild($3);
+	$$ = $1;
+	TreeNode* newBiasNode = new TreeNode(lineno, NODE_OP);
+	newBiasNode->optype = OP_ADD;
+	newBiasNode->addChild($$->child->sibling);
+	$$->child->sibling = newBiasNode;
+
+	// 计算数组偏移量倍数
+	int biasRate = 1;
+	for (unsigned int i = $$->child->type->visitDim + 1; i < $$->child->type->dim; i++) {
+		biasRate *= $$->child->type->dimSize[i];
+	}
+
+	TreeNode* biasNode;
+	if (biasRate == 1) {
+		// 偏移倍数为1时省略乘法结点
+		biasNode = $3;
+	}
+	else {
+		biasNode->optype = OP_MUL;
+		biasNode->addChild($3);
+		TreeNode* biasRateExpr = new TreeNode(lineno, NODE_EXPR);
+		TreeNode* biasRateConst = new TreeNode(lineno, NODE_CONST);
+		biasRateConst->type = TYPE_INT;
+		biasRateConst->int_val = biasRate;
+		biasRateExpr->addChild(biasRateConst);
+		biasNode->addChild(biasRateExpr);
+	}
+	$$->child->type->visitDim++;
+	newBiasNode->addChild(biasNode);
   }
 ;
 
@@ -145,25 +197,25 @@ identifier
 // --------- 声明用标识符 ----------
 declCompIdentifier
 : pDeclIdentifier {$$ = $1;}
-| constArrayIdentifier {$$ = $1;}
+| arrayDeclIdentifier {$$ = $1;}
 ;
 
 pDeclIdentifier
 : declIdentifier {$$ = $1;}
-| MUL pDeclIdentifier {$$ = $2; $$->pointLevel++;}
-| ADDR pDeclIdentifier {$$ = $2; $$->pointLevel--;}
+| MUL pDeclIdentifier {$$ = $2; $$->type->pointLevel++;}
+| ADDR pDeclIdentifier {$$ = $2; $$->type->pointLevel--;}
 ;
 
 // 常量数组标识符（仅供声明使用）
-constArrayIdentifier
+arrayDeclIdentifier
 : pDeclIdentifier LBRACKET INTEGER RBRACKET {
   $$ = $1;
-  $$->type = new Type(VALUE_ARRAY);
+  $$->type->type = VALUE_ARRAY;
   $$->type->elementType = $1->type->type;
   $$->type->dimSize[$$->type->dim] = $3->int_val;
   $$->type->dim++;
 }
-| constArrayIdentifier LBRACKET INTEGER RBRACKET {
+| arrayDeclIdentifier LBRACKET INTEGER RBRACKET {
   $$ = $1;
   $$->type->dimSize[$$->type->dim] = $3->int_val;
   $$->type->dim++;
@@ -174,6 +226,7 @@ declIdentifier
 : IDENTIFIER {
 	$$ = $1;
 	$$->var_scope = presentScope;
+	$$->type = new Type(NOTYPE);
 	#ifdef ID_REDUCE_DEBUG
 		cout<<"# $ reduce declIdentifier : "<<$$->var_name<<", at scope :"<<presentScope<<endl;
 	#endif
@@ -198,12 +251,11 @@ constDecl
   $$ = new TreeNode(lineno, NODE_STMT);
   $$->stype = STMT_CONSTDECL;
   $$->type = TYPE_NONE;
-  $2->type->constvar = true;
   $$->addChild($2);
   $$->addChild($3);  
   TreeNode* p = $3->child;
   while(p != nullptr) {
-	  p->child->type = $2->type;
+	  p->child->type->copy($2->type);
 	  p = p->sibling;
   }
 };
@@ -217,13 +269,15 @@ constDefs
 constDef
 : pDeclIdentifier ASSIGN literalConst {
 	$$ = new TreeNode(lineno, NODE_OP); 
-	$$->optype = OP_DECLASSIGN; 
+	$$->optype = OP_DECLASSIGN;
+	$1->type->constvar = true;
 	$$->addChild($1); 
 	$$->addChild($3);
   }
-| constArrayIdentifier ASSIGN LBRACE ArrayInitVal RBRACE {
-	$$ = new TreeNode(lineno, NODE_OP); 
-	$$->optype = OP_DECLASSIGN; 
+| arrayDeclIdentifier ASSIGN LBRACE ArrayInitVal RBRACE {
+	$$ = new TreeNode(lineno, NODE_OP);
+	$$->optype = OP_DECLASSIGN;
+	$1->type->constvar = true;
 	$$->addChild($1); 
 	$$->addChild($4);
   }
@@ -245,9 +299,11 @@ varDecl
   TreeNode* p = $2->child;
   while(p != nullptr) {
 	  if (p->nodeType == NODE_OP) {
-		  p->child->type = $1->type;
+		  p->child->type->copy($1->type);
 	  }
-	  p->type = $1->type;
+	  else {
+	  	p->type->copy($1->type);
+	  }
 	  p = p->sibling;
   }
   #ifdef DECL_DEBUG
@@ -271,7 +327,7 @@ varDef
 	$$->addChild($1);
 	$$->addChild($3);
   }
-| constArrayIdentifier ASSIGN LBRACE ArrayInitVal RBRACE {
+| arrayDeclIdentifier ASSIGN LBRACE ArrayInitVal RBRACE {
 	$$ = new TreeNode(lineno, NODE_OP);
 	$$->optype = OP_DECLASSIGN;
 	$$->addChild($1);
@@ -285,7 +341,7 @@ funcDef
 : basicType pDeclIdentifier funcLPAREN funcFParams RPAREN LBRACE blockItems RBRACE {
 	$$ = new TreeNode(lineno, NODE_STMT);
 	$$->stype = STMT_FUNCDECL;
-	$2->type = new Type(COMPOSE_FUNCTION);
+	$2->type->type = COMPOSE_FUNCTION;
 	TreeNode* param = $4;
 	while (param != nullptr) {
 		$2->type->paramType[$2->type->paramNum] = param->child->type;
@@ -307,7 +363,7 @@ funcDef
 | basicType pDeclIdentifier funcLPAREN RPAREN LBRACE blockItems RBRACE {
 	$$ = new TreeNode(lineno, NODE_STMT);
 	$$->stype = STMT_FUNCDECL;
-	$2->type = new Type(COMPOSE_FUNCTION);
+	$2->type->type = COMPOSE_FUNCTION;
 	$2->type->retType = $1->type;
 	$$->addChild($1);
 	$$->addChild($2);
@@ -332,7 +388,7 @@ funcFParam
 	$$ = new TreeNode(lineno, NODE_PARAM); 
 	$$->addChild($1); 
 	$$->addChild($2);
-	$2->type = $1->type;
+	$2->type->copy($1->type);
   }
 ;
 
@@ -409,6 +465,16 @@ stmt
 	TreeNode* forDecl = new TreeNode(lineno, NODE_STMT);
 	forDecl->stype = STMT_DECL;
 	forDecl->addChild($3);
+	TreeNode* p = $4->child;
+	while (p) {
+		if (p->nodeType == NODE_OP) {
+			p->child->type->copy($3->type);
+		}
+		else {
+			p->type->copy($3->type);
+		}
+		p = p->sibling;
+	}
 	forDecl->addChild($4);
 	$$->addChild(forDecl);
 	$$->addChild($6);
