@@ -11,10 +11,10 @@ using namespace std;
 
 // #define EXIT_AT_GRAMMA_ERROR
 
-#define DEBUG
+// #define DEBUG
 #ifdef DEBUG
 
-#define AST
+// #define AST
 // #define PARSER_DEBUG
 #ifdef PARSER_DEBUG
 // #define SCOPE_DEBUG
