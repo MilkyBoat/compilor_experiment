@@ -222,7 +222,8 @@ void TreeNode::typeCheck() {
                     typeError = true;
                 }
             }
-            cycleStackTop--;
+            if (stype == STMT_WHILE)
+                cycleStackTop--;
             break;
         case STMT_FOR:
             if (child->sibling->type->type != VALUE_BOOL) {
@@ -236,13 +237,14 @@ void TreeNode::typeCheck() {
                     typeError = true;
                 }
             }
-            cycleStackTop--;
+            if (stype == STMT_FOR)
+                cycleStackTop--;
             break;
         case STMT_BREAK:
         case STMT_CONTINUE:
             if (cycleStackTop < 0) {
                 cout << "Error cycle control statement: " << sType2String(stype)
-                     << ", outside a cycle, at line " << child->sibling->lineno << endl;
+                     << ", outside a cycle, at line " << lineno << endl;
                 typeError = true;
             }
             break;

@@ -52,7 +52,7 @@ asmc:
 	qemu-i386 asmTest.out
 
 st: 
-	./main.out test/2/05_multi_array.c > asmTest.s
+	./main.out test/4/02_path.c > asmTest.s
 	gcc asmTest.s -m32 -o asmTest.out
 	qemu-i386 asmTest.out
 

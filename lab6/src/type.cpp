@@ -79,9 +79,7 @@ int Type::getSize() {
     case VALUE_STRING:
         return 4;
     case VALUE_ARRAY:
-        this->type = elementType;
-        eleSize = this->getSize();
-        this->type = VALUE_ARRAY;
+        eleSize = 4;
         for (unsigned int i = 0; i < dim; i++)
             size *= dimSize[i];
         return eleSize * size;
