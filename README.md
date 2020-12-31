@@ -27,6 +27,8 @@
 
 # 如何使用
 
+> 请先参照本代码库根目录下的util.pdf安装配置环境，需要在Linux上使用，需要安装gcc(g++), flex, bison, qemu等工具
+
 ```bash
 git clone https://github.com/MilkyBoat/compilor_experiment.git
 cd compilor_experiment/lab6
