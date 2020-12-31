@@ -112,6 +112,7 @@ public:
 	// -------------- 类型检查 ----------------
 
 	void typeCheck();
+	void findReturn(vector<TreeNode *> &retList);
 
 	// ------------- asm 代码生成 -------------
 

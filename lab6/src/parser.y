@@ -256,6 +256,7 @@ constDecl
   TreeNode* p = $3->child;
   while(p != nullptr) {
 	  p->child->type->copy($2->type);
+	  p->child->type->constvar = true;
 	  p = p->sibling;
   }
 };
@@ -270,14 +271,12 @@ constDef
 : pDeclIdentifier ASSIGN literalConst {
 	$$ = new TreeNode(lineno, NODE_OP); 
 	$$->optype = OP_DECLASSIGN;
-	$1->type->constvar = true;
 	$$->addChild($1); 
 	$$->addChild($3);
   }
 | arrayDeclIdentifier ASSIGN LBRACE ArrayInitVal RBRACE {
 	$$ = new TreeNode(lineno, NODE_OP);
 	$$->optype = OP_DECLASSIGN;
-	$1->type->constvar = true;
 	$$->addChild($1); 
 	$$->addChild($4);
   }

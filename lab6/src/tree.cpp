@@ -192,11 +192,43 @@ void TreeNode::typeCheck() {
         // statement无类型
         this->type = TYPE_NONE;
         switch (stype) {
-        case STMT_FUNCDECL:
-            if (child->type->type == COMPOSE_FUNCTION) {
-
+        case STMT_FUNCDECL: {
+            vector<TreeNode *> retList;
+            findReturn(retList);
+            int size = retList.size();
+            if (child->sibling->type->retType->type == VALUE_VOID) {
+                // void类型函数无return或return无子节点
+                for (int i = 0; i < size; i++) {
+                    if (retList[i]->child) {
+                        cout << "Wrong return: none void return in void function, at line " << retList[i]->lineno << endl;
+                        typeError = true;
+                    }
+                }
+            }
+            else {
+                // 其它函数必须return且类型一致
+                if (size == 0) {
+                    cout << "Wrong return: none void function without any return statement, function decl at line " << child->sibling->lineno << endl;
+                    typeError = true;
+                }
+                else {
+                    for (int i = 0; i < size; i++) {
+                        if (retList[i]->child) {
+                            if (retList[i]->child->type->type != child->type->type) {
+                                cout << "Wrong type: return type can`t fit function return type, at line " 
+                                << retList[i]->lineno << endl;
+                            typeError = true;
+                            }
+                        }
+                        else {
+                            cout << "Wrong return: return nothing in none void function, at line " << retList[i]->lineno << endl;
+                            typeError = true;
+                        }
+                    }
+                }
             }
             break;
+        }
         case STMT_IF:
         case STMT_IFELSE:
         case STMT_WHILE:
@@ -248,6 +280,9 @@ void TreeNode::typeCheck() {
                 typeError = true;
             }
             break;
+        case STMT_RETURN:
+
+            break;
         default:
             break;
         }
@@ -277,7 +312,7 @@ void TreeNode::typeCheck() {
                 typeError = true;
             }
             if (optype == OP_ASSIGN && child->type->constvar) {
-                cout << "Wrong assign: assign to a const varable";
+                cout << "Wrong assign: assign to a const varable, at line " << lineno;
                 typeError = true;
             }
             if (optype == OP_ASSIGN || optype == OP_DECLASSIGN)
@@ -304,7 +339,7 @@ void TreeNode::typeCheck() {
                 typeError = true;
             } 
             else if (child->type->constvar) {
-                cout << "Wrong assign: assign to a const varable";
+                cout << "Wrong assign: assign to a const varable, at line " << lineno;
                 typeError = true;
             }
             this->type = TYPE_INT;
@@ -357,6 +392,18 @@ void TreeNode::typeCheck() {
             cout << "# Type check end @" << nodeID << endl;
 #endif
 
+}
+
+void TreeNode::findReturn(vector<TreeNode *> &retList) {
+    if (nodeType == NODE_STMT && stype == STMT_RETURN)
+        retList.push_back(this);
+    else {
+        TreeNode *p = child;
+        while (p) {
+            p->findReturn(retList);
+            p = p->sibling;
+        }
+    }
 }
 
 void TreeNode::genCode() {

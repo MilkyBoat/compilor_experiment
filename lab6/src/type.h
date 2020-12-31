@@ -9,7 +9,7 @@ using namespace std;
 #define MAX_SCOPE_STACK 32
 #define SCOPT_ID_BASE '1'
 
-#define EXIT_AT_GRAMMA_ERROR
+// #define EXIT_AT_GRAMMA_ERROR
 
 #define DEBUG
 #ifdef DEBUG

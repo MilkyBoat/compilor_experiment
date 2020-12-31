@@ -23,16 +23,16 @@ complier: lex yacc main
 run: complier
 	./test.out
 
-l1: complier
+l1:
 	./test.out --level 1
 
-l2: complier
+l2:
 	./test.out --level 2
 
-l3: complier
+l3:
 	./test.out --level 3
 
-l4: complier
+l4:
 	./test.out --level 4
 
 diffcheck:
@@ -41,7 +41,7 @@ diffcheck:
 noerrlog:
 	./test.out --nolog
 
-type: complier
+type:
 	./test.out --type
 
 asm:
