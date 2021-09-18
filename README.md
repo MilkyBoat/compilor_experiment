@@ -1,4 +1,4 @@
-# Luczy Compilor - 小辣稽编译器
+# Luczy Compiler - 小辣稽编译器
 小辣稽的编译原理大作业-简化的c语言编译器
 
 # 项目概要
@@ -23,7 +23,7 @@
 实现SysY语言的语法分析器，并与词法分析器结合，将源码翻译为AST语法树
 
 - lab6
-实现编译器前端 `LSCC (Luczydoge Simplified C Compilor)` 将c代码翻译到汇编代码
+实现编译器前端 `LSCC (Luczydoge Simplified C Compiler)` 将c代码翻译到汇编代码
 
 # 如何使用
 
