@@ -30,11 +30,17 @@
 > 请先参照本代码库根目录下的util.pdf安装配置环境，需要在Linux上使用，需要安装gcc(g++), flex, bison, qemu等工具
 
 ```bash
+# 下载代码
 git clone https://github.com/MilkyBoat/compilor_experiment.git
+# 进入项目目录，lab6是最终成型的编译器前端
 cd compilor_experiment/lab6
+# 用gcc编译器编译编译器[\doge]
 make
+# main.out是得到的编译器，默认编译输出到命令行，使用>来重定向到汇编文件
 ./main.out c语言代码文件名 > result.s
+# 得到的是32位AT&T格式的x86汇编，使用gcc进行后端编译的时候要加-m32选项
 gcc result.s -m32 -o result.out
+# 使用qemu模拟运行32位程序
 qemu-i386 result.out
 ```
 
@@ -206,7 +212,7 @@ printf('%d\n', *b);
 
 2. 语法分析：`yacc`，这里使用的是linux上的`bison`
 
-    这一过程先使用`bison`构造`LALR`分析表，然后表驱动翻译c代码到抽象语法树。在`./lab6/src/type.h`中，解除第17行`#define AST`的注释，将能够在追踪生成的汇编代码前部看到语法树的样子。
+    这一过程先使用`bison`构造`LALR`分析表，然后表驱动翻译c代码到抽象语法树。在`./lab6/src/type.h`中，解除第17行`#define AST`的注释，将能够在最终生成的汇编代码开头看到语法树的样子。
 
     此外，这一步还完成了标识符作用域的分析，将检查标识符重定义和未定义等错误。
 
@@ -220,7 +226,7 @@ printf('%d\n', *b);
 
 5. 机器码生成：`gcc` :dog:
 
-    是的，这个项目并没有完整的实现一个编译器，最后的机器码生成仍然需要GCC编译器。
+    是的，这个项目只是前端，并没有完整的实现一个编译器，最后的机器码生成仍然需要GCC编译器。
 
 6. 运行程序 `qmue`
 
